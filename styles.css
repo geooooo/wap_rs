@@ -1,0 +1,132 @@
+@import "/styles/vars.css";
+@import "/styles/reset.css";
+@import "/styles/font.css";
+@import "/styles/flat-button.css";
+@import "/styles/move-line.css";
+@import "/styles/equalizer.css";
+@import "/styles/logo.css";
+@import "/styles/helper-text.css";
+@import "/styles/track-list.css";
+@import "/styles/track.css";
+@import "/styles/media.css";
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  grid-template-rows: 3fr 1fr;
+  height: 100%;
+  background-color: var(--color-bg-app);
+}
+
+.app:has(.app__track-list .track-list_hidden) {
+  grid-template-columns: 1fr;
+}
+
+.app__controls {
+  grid-column-start: 1;
+  grid-row-start: 1;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-width: var(--app-min-width);
+  padding: 15px 20px;
+  height: 100%;
+  background-color: var(--color-bg-player-panel);
+}
+
+.app__logo {
+  grid-column-start: 1;
+  grid-row-start: 2;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 15px 20px;
+  overflow: hidden;
+}
+
+.app__track-list {
+  height: 100%;
+  grid-column-start: 2;
+  grid-row-start: 1;
+  grid-row-end: span 2;
+}
+
+.app__track-list:has(.track-list_hidden) {
+  display: none;
+}
+
+.controls__top {
+  height: 100%;
+  margin-bottom: 20px;
+}
+
+.controls__bottom {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.controls__col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.controls__col .move-line {
+  margin-bottom: 10px;
+}
+
+.controls__col .move-line:last-child {
+  margin-bottom: 0;
+}
+
+.controls__row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.controls__row .flat-button {
+  margin-right: 10px;
+}
+
+.controls__row .flat-button:last-child {
+  margin-right: 0;
+}
+
+/* TODO */
+
+.helper-text {
+  opacity: 1;
+}
+
+.helper-text::after {
+  content: "Volume 100%";
+}
+
+.flat-button_pause {
+  display: none;
+}
+
+.move-line__bar {
+  width: 50% !important;
+}
+
+.equalizer__level:nth-child(1) {
+  height: 0% !important;
+}
+
+.equalizer__level:last-child {
+  height: 100% !important;
+}
+
+.equalizer__level:nth-child(2n) {
+  height: 20%;
+}
+
+.equalizer__level:nth-child(2n+1) {
+  height: 70%;
+}
+
+.track-list__empty-text {
+  display: none !important;
+}

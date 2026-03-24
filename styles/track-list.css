@@ -1,0 +1,43 @@
+.track-list {
+  height: 100%;
+  min-width: calc(var(--app-min-width) / 2);
+  background-color: var(--color-bg-player-panel-front);
+  cursor: pointer;
+  overflow-y: scroll;
+}
+
+.track-list_hidden {
+  display: none;
+}
+
+.track-list__empty-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 1.5rem;
+  color: var(--color-bg-app);
+  text-shadow: 0 0 var(--box-shadow-size) transparent;
+  animation-duration: calc(var(--transition-duration) * 5);
+  animation-timing-function: var(--transition-timing-function);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  transition-duration: var(--transition-duration);
+  transition-timing-function: var(--transition-timing-function);
+  transition-property: text-shadow, color;
+}
+
+.track-list__empty-text:hover {
+  animation-name: empty-text-scale;
+  color: var(--color-control-active);
+  text-shadow: 0 0 var(--box-shadow-size) var(--color-control-active);
+}
+
+@keyframes empty-text-scale {
+  from {
+      transform: rotateY(0deg);
+  }
+  to {
+      transform: rotateY(20deg);
+  }
+}

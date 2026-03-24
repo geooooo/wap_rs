@@ -1,0 +1,16 @@
+@media screen and (max-width: 900px) {
+  /* calc(var(--app-min-width) + var(--app-min-width) / 2) */
+  .app:has(.app__track-list .track-list:not(.track-list_hidden)) {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .app__track-list:has(.track-list:not(.track-list_hidden)) {
+    grid-column-start: 1;
+    grid-row-start: 2;
+  }
+
+  .app:has(.app__track-list .track-list:not(.track-list_hidden)) .app__logo {
+    display: none;
+  }
+}

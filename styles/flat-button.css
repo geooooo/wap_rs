@@ -1,0 +1,81 @@
+.flat-button,
+.flat-button.flat-button_down:active {
+  --border-size: 2px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: var(--border-size) solid var(--color-control-active);
+  background-color: var(--color-bg-controls);
+  transition-duration: var(--transition-duration);
+  transition-timing-function: var(--transition-timing-function);
+  transition-property: border-color, background-color, box-shadow;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+}
+
+.flat-button:hover,
+.flat-button.flat-button_down:hover {
+  box-shadow: 0 0 var(--box-shadow-size) 0 var(--color-control-active);
+}
+
+.flat-button:active,
+.flat-button.flat-button_down {
+  border-color: transparent;
+  background-color: transparent;
+  box-shadow: 0 0 var(--box-shadow-size) 0 var(--color-control-inactive);
+}
+
+.flat-button_prev {
+  border-top-left-radius: 30px;
+  border-bottom-left-radius: 30px;
+}
+
+.flat-button_play,
+.flat-button_pause {
+  width: 60px;
+  height: 60px;
+  border-radius: 100%;
+}
+
+.flat-button_next {
+  border-top-right-radius: 30px;
+  border-bottom-right-radius: 30px;
+}
+
+.flat-button_list,
+.flat-button_random,
+.flat-button_loop {
+  border-radius: var(--border-radius);
+}
+
+.flat-button svg {
+  width: 50%;
+  height: 50%;
+  fill: transparent;
+  stroke: var(--color-control-active);
+  stroke-width: var(--border-size);
+  transition-duration: var(--transition-duration);
+  transition-timing-function: var(--transition-timing-function);
+  transition-property: stroke, fill;
+}
+
+.flat-button.flat-button_down:hover svg {
+  stroke: var(--color-control-active);
+}
+
+.flat-button:active svg,
+.flat-button.flat-button_down svg {
+  stroke: var(--color-control-inactive);
+} 
+
+.flat-button_play svg,
+.flat-button_pause svg {
+  fill: var(--color-control-active);
+}
+
+.flat-button_play:active svg,
+.flat-button_pause:active svg {
+  fill: var(--color-control-inactive);
+}
