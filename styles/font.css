@@ -1,13 +1,17 @@
 @font-face {
-  font-family: "Roboto Flex";
-  src: url("/assets/RobotoFlex.ttf") format("truetype");
+  font-family: "RobotoFlex";
+  src: 
+    url("/RobotoFlex.ttf") format("truetype"),
+    url("/RobotoFlex.ttf") format("ttf"),
+    url("/RobotoFlex.woff2") format("woff2"),;
   font-weight: normal;
-  font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 body {
-  font-family: "Roboto Flex";
+  font-family: "RobotoFlex";
+  font-weight: normal;
+  font-style: normal;
   font-size: 18px;
 }
