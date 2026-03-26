@@ -98,6 +98,11 @@ fn MoveLine(
     let container_ref: NodeRef<html::Div> = NodeRef::new();
 
     Effect::new( move || {
+        let has_played_track = max_value.get() != 0;
+        if !has_played_track {
+            return;
+        }
+
         let container_element = container_ref.get().unwrap();
         let container_width = container_element.client_width() as u32;
 

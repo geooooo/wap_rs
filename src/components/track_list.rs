@@ -1,5 +1,5 @@
 use leptos::prelude::*;
-use crate::state::Track as TrackModel;
+use crate::state::{AppState, Track as TrackModel};
 
 #[component]
 pub fn TrackList(
@@ -41,15 +41,7 @@ fn Track(
     name: String,
     duration: u32,
 ) -> impl IntoView {
-    let hours = duration / 3600;
-    let minutes = duration % 3600 / 60;
-    let seconds = duration % 60;
-
-    let formatted_duration = if hours > 0 {
-        format!("{hours:0>2}:{minutes:0>2}:{seconds:0>2}")
-    } else {
-        format!("{minutes:0>2}:{seconds:0>2}")
-    };
+    let formatted_duration = AppState::format_time(duration);
 
     view! {
         <div class="track">
@@ -58,7 +50,7 @@ fn Track(
             </div>
 
             <div class="track__time">
-                {duration} " - " {formatted_duration}
+                {formatted_duration}
             </div>
         </div>
     }

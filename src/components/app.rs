@@ -4,10 +4,8 @@ use super::flat_button::*;
 use super::equalizer::Equalizer;
 use super::logo::Logo;
 use super::track_list::TrackList;
-use crate::state::AppState;
+use crate::state::{AppState, HelpTarget};
 
-// TODO: move line
-// TODO: helper text: animation, speed, volume, time, 3 pressed buttons
 // TODO: hot keys: space - play/pause, enter - toggle list, arrows to select track, r - random, l - loop, p - pause/play, +/- - volume
 // TODO: backspace - delete track, shift+lclick select range of tracks, cmd+lclick select single track
 // TODO: cmd+a select all tracks, esc clear selection, click on track - select as played but not play now and pause
@@ -45,9 +43,36 @@ pub fn App() -> impl IntoView {
     let on_list_button_click = move || 
         set_state.update(|state| state.toggle_track_list_visibility());
 
-    let on_prev_button_click = move || {};
+    let on_prev_button_click = || {};
 
-    let on_next_button_click = move || {};
+    let on_next_button_click = || {};
+
+    let on_volume_change = move |volume|
+        set_state.update(|state| state.set_volume(volume));
+
+    let on_speed_change = move |speed|
+        set_state.update(|state| state.set_speed(speed));
+
+    let on_current_time_change = move |time|
+        set_state.update(|state| state.set_current_time(time));
+
+    let on_volume_hover = move |_|
+        set_state.update(|state| state.update_help_text(HelpTarget::VolumeLine));
+
+    let on_speed_hover = move |_|
+        set_state.update(|state| state.update_help_text(HelpTarget::SpeedLine));
+
+    let on_current_time_hover = move |_| 
+        set_state.update(|state| state.update_help_text(HelpTarget::TimeLine));
+
+    let on_loop_button_hover = move |_| 
+        set_state.update(|state| state.update_help_text(HelpTarget::LoopButton));
+
+    let on_random_button_hover = move |_| 
+        set_state.update(|state| state.update_help_text(HelpTarget::RandomButton));
+
+    let on_list_button_hover = move |_|
+        set_state.update(|state| state.update_help_text(HelpTarget::ListButton));
 
     view! {
         <div class="app__controls">
@@ -56,7 +81,8 @@ pub fn App() -> impl IntoView {
                 <MoveLineTime 
                     current_time
                     duration
-                    onchange=|v| leptos::logging::debug_log!("{v}")
+                    onchange=on_current_time_change
+                    on:mouseenter=on_current_time_hover
                 />
             </div>
 
@@ -65,12 +91,14 @@ pub fn App() -> impl IntoView {
                     <MoveLineVolume 
                         initial_volume=state.get_untracked().get_volume()
                         max_volume=AppState::MAX_VOLUME
-                        onchange=|v| leptos::logging::debug_log!("{v}")
+                        onchange=on_volume_change
+                        on:mouseenter=on_volume_hover
                     />
                     <MoveLineSpeed
                         initial_speed=state.get_untracked().get_speed()
                         max_speed=AppState::MAX_SPEED
-                        onchange=|v| leptos::logging::debug_log!("{v}")
+                        onchange=on_speed_change
+                        on:mouseenter=on_speed_hover
                     />
                 </div>
 
@@ -86,9 +114,20 @@ pub fn App() -> impl IntoView {
                 </div>
 
                 <div class="controls__row">
-                    <ListFlatButton onclick=on_list_button_click />
-                    <RandomFlatButton onclick=on_random_button_click />
-                    <LoopFlatButton onclick=on_loop_button_click />
+                    <ListFlatButton 
+                        onclick=on_list_button_click
+                        on:mouseenter=on_list_button_hover
+                    />
+
+                    <RandomFlatButton 
+                        onclick=on_random_button_click
+                        on:mouseenter=on_random_button_hover
+                    />
+
+                    <LoopFlatButton 
+                        onclick=on_loop_button_click
+                        on:mouseenter=on_loop_button_hover
+                    />
                 </div>
             </div>
         </div>

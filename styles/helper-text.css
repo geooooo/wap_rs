@@ -1,37 +1,19 @@
+.app:has(.flat-button_random:hover) .helper-text,
+.app:has(.flat-button_list:hover) .helper-text,
+.app:has(.flat-button_loop:hover) .helper-text, 
+.app:has(.move-line_time:hover) .helper-text,
+.app:has(.move-line_speed:hover) .helper-text,
+.app:has(.move-line_volume:hover) .helper-text {
+  opacity: 1;
+} 
+
 .helper-text {
   position: absolute;
   right: 20px;
   bottom: 15px;
   opacity: 0;
   color: var(--color-text-active);
-  animation-duration: var(--transition-duration);
-  animation-timing-function: var(--transition-timing-function);
-  animation-fill-mode: forwards;
-  animation-iteration-count: 1;
-}
-
-.helper-text_show {
-  animation-name: helper-text-show;
-}
-
-.helper-text_hide {
-  animation-name: helper-text-hide;
-}
-
-@keyframes helper-text-show {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes helper-text-hide {
-    from {
-        opacity: 1;
-    }
-    to {
-        opacity: 0;
-    }
+  transition-duration: var(--transition-duration);
+  transition-timing-function: var(--transition-timing-function);
+  transition-property: opacity;
 }
