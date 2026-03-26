@@ -13,8 +13,8 @@ use super::logo::Logo;
 use super::track_list::TrackList;
 use crate::state::AppState;
 
-// TODO: helper text: animation, speed, volume, time, 3 pressed buttons
 // TODO: move line
+// TODO: helper text: animation, speed, volume, time, 3 pressed buttons
 // TODO: hot keys: space - play/pause, enter - toggle list, arrows to select track, r - random, l - loop, p - pause/play, +/- - volume
 // TODO: backspace - delete track, shift+lclick select range of tracks, cmd+lclick select single track
 // TODO: cmd+a select all tracks, esc clear selection, click on track - select as played but not play now and pause
@@ -33,9 +33,6 @@ pub fn App() -> impl IntoView {
 
     let volume = 
         Signal::derive(move || state.get().get_volume());
-
-    let speed = 
-        Signal::derive(move || state.get().get_speed());
 
     let play_state = 
         Signal::derive(move || state.get().get_play_state());
@@ -78,7 +75,8 @@ pub fn App() -> impl IntoView {
                         volume
                     />
                     <MoveLineSpeed
-                        speed
+                        initial_speed=state.get_untracked().get_speed()
+                        onchange=|v| leptos::logging::debug_log!("{v}")
                     />
                 </div>
 

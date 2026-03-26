@@ -4,6 +4,7 @@
   grid-template-rows: 3fr 1fr;
   height: 100%;
   background-color: var(--color-bg-app);
+  user-select: none;
 }
 
 .app:has(.app__track-list .track-list_hidden) {
