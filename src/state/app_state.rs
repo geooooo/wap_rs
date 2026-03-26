@@ -49,14 +49,14 @@ impl AppState {
 
     pub fn set_current_time(&mut self, time: u32) {
         self.time = time;
-        
-        self.update_help_text(HelpTarget::TimeLine);
+
+        self.set_help_text(HelpTarget::TimeLine);
     }
 
     pub fn set_speed(&mut self, speed: u8) {
         self.speed = speed;
 
-        self.update_help_text(HelpTarget::SpeedLine);
+        self.set_help_text(HelpTarget::SpeedLine);
     }
 
     pub fn inc_volume(&mut self) {
@@ -80,14 +80,10 @@ impl AppState {
     pub fn set_volume(&mut self, volume: u8) {
         self.volume = volume;
 
-        self.update_help_text(HelpTarget::VolumeLine);
+        self.set_help_text(HelpTarget::VolumeLine);
     }
 
-    pub fn hide_help_text(&mut self) {
-        self.help_text = String::new();
-    }
-
-    pub fn update_help_text(&mut self, target: HelpTarget) {
+    pub fn set_help_text(&mut self, target: HelpTarget) {
         match target {
             HelpTarget::ListButton => self.help_text =
                 if self.track_list_state.is_visible {
@@ -119,19 +115,25 @@ impl AppState {
                 },
             HelpTarget::SpeedLine => self.help_text = format!("Speed: {}%", self.speed),
             HelpTarget::VolumeLine => self.help_text = format!("Volume: {}%", self.volume),
-        }
+        };
     }
 
     pub fn toggle_track_list_visibility(&mut self) {
         self.track_list_state.is_visible = !self.track_list_state.is_visible;
+
+        self.set_help_text(HelpTarget::ListButton);
     }
 
     pub fn toggle_random(&mut self) {
         self.is_random = !self.is_random;
+
+        self.set_help_text(HelpTarget::RandomButton);
     }
 
     pub fn toggle_loop(&mut self) {
         self.is_loop = !self.is_loop;
+
+        self.set_help_text(HelpTarget::LoopButton);
     }
 
     pub fn toggle_play_state(&mut self) {

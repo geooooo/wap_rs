@@ -1,11 +1,10 @@
 use leptos::prelude::*;
 use leptos::html;
-use leptos::ev::MouseEvent;
 use crate::state::PlayState;
 
 #[component]
 pub fn PrevFlatButton(
-    onclick: impl Fn(bool) + 'static,
+    onclick: impl Fn() + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
@@ -18,7 +17,7 @@ pub fn PrevFlatButton(
 #[component]
 pub fn PlayFlatButton(
     play_state: Signal<Option<PlayState>>,
-    onclick: impl Fn(bool) + Clone + Send + 'static,
+    onclick: impl Fn() + Clone + Send + 'static,
 ) -> impl IntoView {
     view! {
         {move || {
@@ -52,7 +51,7 @@ pub fn PlayFlatButton(
 
 #[component]
 pub fn NextFlatButton(
-    onclick: impl Fn(bool) + 'static,
+    onclick: impl Fn() + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
@@ -65,7 +64,7 @@ pub fn NextFlatButton(
 #[component]
 pub fn ListFlatButton(
     node_ref: NodeRef<html::Button>,
-    onclick: impl Fn(bool) + 'static,
+    onclick: impl Fn() + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
@@ -79,7 +78,7 @@ pub fn ListFlatButton(
 #[component]
 pub fn RandomFlatButton(
     node_ref: NodeRef<html::Button>,
-    onclick: impl Fn(bool) + 'static,
+    onclick: impl Fn() + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
@@ -93,7 +92,7 @@ pub fn RandomFlatButton(
 #[component]
 pub fn LoopFlatButton(
     node_ref: NodeRef<html::Button>,
-    onclick: impl Fn(bool) + 'static,
+    onclick: impl Fn() + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
@@ -155,7 +154,7 @@ fn FlatButton(
     #[prop(default = None)]
     node_ref: Option<NodeRef<html::Button>>,
     kind: FlatButtonKind,
-    onclick: impl Fn(bool) + 'static,
+    onclick: impl Fn() + 'static,
 ) -> impl IntoView {
     const BASE_CLASS: &str = "flat-button";
 
@@ -165,7 +164,7 @@ fn FlatButton(
 
     let class = format!("{BASE_CLASS} {}", kind.class());
 
-    let onclick = move |event: MouseEvent| {
+    let onclick = move |_| {
         if kind.can_pressed() {
             set_is_pressed.set(!is_pressed.get());
         }
@@ -173,7 +172,7 @@ fn FlatButton(
         let button_element = node_ref.get().unwrap();
         let _ = button_element.blur();
 
-        onclick(event.is_trusted());
+        onclick();
     };
 
     view! {

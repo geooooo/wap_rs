@@ -26,17 +26,8 @@ pub fn App() -> impl IntoView {
     let current_time = 
         Signal::derive(move || state.get().get_time());
 
-    let max_volume = 
-        Signal::derive(|| AppState::MAX_VOLUME as u32);
-
     let volume = 
-        Signal::derive(move || state.get().get_volume() as u32);
-
-    let max_speed = 
-        Signal::derive(|| AppState::MAX_SPEED as u32);
-
-    let speed = 
-        Signal::derive(move || state.get().get_speed() as u32);
+        Signal::derive(move || state.get().get_volume());
 
     let play_state = 
         Signal::derive(move || state.get().get_play_state());
@@ -48,47 +39,24 @@ pub fn App() -> impl IntoView {
         Signal::derive(move || state.get().get_tracks());
 
 
-    let on_prev_button_click = |_| {};
+    let on_prev_button_click = || {};
 
-    let on_next_button_click = |_| {};
+    let on_next_button_click = || {};
 
-    let on_play_button_click = move |_| 
+    let on_play_button_click = move || 
         state.update(|state| state.toggle_play_state());
 
-    let on_random_button_click = move |is_user|
-        state.update(|state| {
-            state.toggle_random();
+    let on_random_button_click = move ||
+        state.update(|state| state.toggle_random());
 
-            if is_user {
-                state.update_help_text(HelpTarget::RandomButton);
-            } else {
-                state.hide_help_text();
-            }
-        });
+    let on_loop_button_click = move || 
+        state.update(|state| state.toggle_loop());
 
-    let on_loop_button_click = move |is_user| 
-        state.update(|state| {
-            state.toggle_loop();
+    let on_list_button_click = move || 
+        state.update(|state| state.toggle_track_list_visibility());
 
-            if is_user {
-                state.update_help_text(HelpTarget::LoopButton);
-            } else {
-                state.hide_help_text();
-            }
-        });
 
-    let on_list_button_click = move |is_user| 
-        state.update(|state| {
-            state.toggle_track_list_visibility();
-
-            if is_user {
-                state.update_help_text(HelpTarget::ListButton);
-            } else {
-                state.hide_help_text();
-            }
-        });
-
-    let random_button_click = move ||
+    let random_button_click = move || 
         random_button_ref.get().unwrap().click();
 
     let loop_button_click = move || 
@@ -97,11 +65,13 @@ pub fn App() -> impl IntoView {
     let list_button_click = move || 
         list_button_ref.get().unwrap().click();
 
-    let change_volume = move |is_inc| if is_inc {
-        state.update(|state| state.inc_volume())
-    } else {
-        state.update(|state| state.dec_volume())
-    };
+    let change_volume = move |is_inc| 
+        if is_inc {
+            state.update(|state| state.inc_volume());
+        } else {
+            state.update(|state| state.dec_volume());
+        };
+
 
     let on_volume_change = move |volume|
         state.update(|state| state.set_volume(volume as u8));
@@ -112,30 +82,31 @@ pub fn App() -> impl IntoView {
     let on_current_time_change = move |time|
         state.update(|state| state.set_current_time(time));
 
+
     let on_volume_hover = move |_|
-        state.update(|state| state.update_help_text(HelpTarget::VolumeLine));
+        state.update(|state| state.set_help_text(HelpTarget::VolumeLine));
 
     let on_speed_hover = move |_|
-        state.update(|state| state.update_help_text(HelpTarget::SpeedLine));
+        state.update(|state| state.set_help_text(HelpTarget::SpeedLine));
 
     let on_current_time_hover = move |_| 
-        state.update(|state| state.update_help_text(HelpTarget::TimeLine));
+        state.update(|state| state.set_help_text(HelpTarget::TimeLine));
 
     let on_loop_button_hover = move |_| 
-        state.update(|state| state.update_help_text(HelpTarget::LoopButton));
+        state.update(|state| state.set_help_text(HelpTarget::LoopButton));
 
     let on_random_button_hover = move |_| 
-        state.update(|state| state.update_help_text(HelpTarget::RandomButton));
+        state.update(|state| state.set_help_text(HelpTarget::RandomButton));
 
     let on_list_button_hover = move |_|
-        state.update(|state| state.update_help_text(HelpTarget::ListButton));
+        state.update(|state| state.set_help_text(HelpTarget::ListButton));
 
 
     init_global_key_event_handlers(
         random_button_click,
         loop_button_click,
         list_button_click,
-        move || on_play_button_click(false),
+        on_play_button_click,
         change_volume,
     );
 
@@ -156,13 +127,13 @@ pub fn App() -> impl IntoView {
                 <div class="controls__col">
                     <MoveLineVolume 
                         volume
-                        max_volume
+                        max_volume=AppState::MAX_VOLUME
                         onchange=on_volume_change
                         on:mouseenter=on_volume_hover
                     />
                     <MoveLineSpeed
-                        speed
-                        max_speed
+                        initial_speed=state.get_untracked().get_speed()
+                        max_speed=AppState::MAX_SPEED
                         onchange=on_speed_change
                         on:mouseenter=on_speed_hover
                     />
