@@ -1,14 +1,7 @@
 use leptos::prelude::*;
+use super::move_line::*;
+use super::flat_button::*;
 use super::equalizer::Equalizer;
-use super::move_line::{MoveLineTime, MoveLineVolume, MoveLineSpeed};
-use super::flat_button::{
-    PrevFlatButton, 
-    PlayFlatButton, 
-    NextFlatButton,
-    ListFlatButton,
-    RandomFlatButton,
-    LoopFlatButton,
-};
 use super::logo::Logo;
 use super::track_list::TrackList;
 use crate::state::AppState;
@@ -30,9 +23,6 @@ pub fn App() -> impl IntoView {
 
     let current_time = 
         Signal::derive(move || state.get().get_time());
-
-    let volume = 
-        Signal::derive(move || state.get().get_volume());
 
     let play_state = 
         Signal::derive(move || state.get().get_play_state());
@@ -64,18 +54,22 @@ pub fn App() -> impl IntoView {
             <div class="controls__top">
                 <Equalizer help_text />
                 <MoveLineTime 
-                    duration
                     current_time
+                    duration
+                    onchange=|v| leptos::logging::debug_log!("{v}")
                 />
             </div>
 
             <div class="controls__bottom">
                 <div class="controls__col">
                     <MoveLineVolume 
-                        volume
+                        initial_volume=state.get_untracked().get_volume()
+                        max_volume=AppState::MAX_VOLUME
+                        onchange=|v| leptos::logging::debug_log!("{v}")
                     />
                     <MoveLineSpeed
                         initial_speed=state.get_untracked().get_speed()
+                        max_speed=AppState::MAX_SPEED
                         onchange=|v| leptos::logging::debug_log!("{v}")
                     />
                 </div>

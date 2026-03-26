@@ -30,6 +30,9 @@ impl Default for AppState {
 }
 
 impl AppState {
+    pub const MAX_SPEED: u8 = 200;
+    pub const MAX_VOLUME: u8 = 100;
+
     pub fn toggle_track_list_visibility(&mut self) {
         self.track_list_state.is_visible = !self.track_list_state.is_visible;
     }

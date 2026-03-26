@@ -6,68 +6,92 @@ use std::rc::Rc;
 
 #[component]
 pub fn MoveLineTime(
-    duration: Signal<u32>,
     current_time: Signal<u32>,
+    duration: Signal<u32>,
+    onchange: impl Fn(u32) + Clone + 'static,
 ) -> impl IntoView {
-    let bar_ref: NodeRef<html::Div> = NodeRef::new();
-
-    Effect::new(move |_| {
-        let bar_element = bar_ref.get().unwrap();
-        let bar_width = f64::trunc(
-            (current_time.get() as f64 / duration.get() as f64) * 100.0
-            
-        ) as u32;
-
-        bar_element.style(format!("width: {bar_width}%"));
-    });
-
     view! {
-        <div class="move-line move-line_time">
-            <div 
-                class="move-line__bar"
-                node_ref=bar_ref
-            />
-        </div>
+        <MoveLine 
+            kind=MoveLineKind::Time
+            value=current_time
+            max_value=duration 
+            onchange
+        />
     }
 }
 
 #[component]
 pub fn MoveLineVolume(
-    volume: Signal<u8>,
+    initial_volume: u8,
+    max_volume: u8,
+    onchange: impl Fn(u8) + Clone + 'static,
 ) -> impl IntoView {
-    const MAX_VOLUME: u8 = 100;
-
-    let bar_ref: NodeRef<html::Div> = NodeRef::new();
-
-    Effect::new(move |_| {
-        let bar_element = bar_ref.get().unwrap();
-        let bar_width = f64::trunc((volume.get() as f64 / MAX_VOLUME as f64) * 100.0) as u8;
-
-        bar_element.style(format!("width: {bar_width}%"));
-    });
+    let initial_volume = Signal::derive(move || initial_volume as u32);
+    let max_volume = Signal::derive(move || max_volume as u32);
+    let onchange = move |value: u32| onchange(value as u8);
 
     view! {
-        <div class="move-line move-line_volume">
-            <div 
-                class="move-line__bar" 
-                node_ref=bar_ref
-            />
-        </div>
+        <MoveLine 
+            kind=MoveLineKind::Volume
+            value=initial_volume
+            max_value=max_volume
+            onchange
+        />
     }
 }
+
 
 #[component]
 pub fn MoveLineSpeed(
     initial_speed: u8,
+    max_speed: u8,
     onchange: impl Fn(u8) + Clone + 'static,
 ) -> impl IntoView {
-    const MAX_SPEED: u8 = 200;
+    let initial_speed = Signal::derive(move || initial_speed as u32);
+    let max_speed = Signal::derive(move || max_speed as u32);
+    let onchange = move |value: u32| onchange(value as u8);
+
+    view! {
+        <MoveLine 
+            kind=MoveLineKind::Speed
+            value=initial_speed
+            max_value=max_speed
+            onchange
+        />
+    }
+}
+
+enum MoveLineKind {
+    Time,
+    Volume,
+    Speed,
+}
+
+impl MoveLineKind  {
+    fn class(&self) -> &'static str {
+        match self {
+            Self::Time => "move-line_time",
+            Self::Volume => "move-line_volume",
+            Self::Speed => "move-line_speed",
+        }
+    }
+}
+
+#[component]
+fn MoveLine(
+    kind: MoveLineKind,
+    value: Signal<u32>,
+    max_value: Signal<u32>,
+    onchange: impl Fn(u32) + Clone + 'static,
+) -> impl IntoView {
+    const BASE_CLASS: &str = "move-line";
     const THROTTLE_TIME: f64 = 100.0;
 
     let (is_mouse_down, set_is_mouse_down) = signal(false);
+    let bar_width_init_fn = move || calc_bar_width(value.get(), max_value.get());
+    let (bar_width, set_bar_width) = signal(bar_width_init_fn());
 
-    let bar_initial_width = calc_bar_width(initial_speed, MAX_SPEED);
-    let (bar_width, set_bar_width) = signal(bar_initial_width);
+    let class = format!("{BASE_CLASS} {}", kind.class());
 
     let onchange = use_throttle_fn_with_arg(onchange, THROTTLE_TIME);
     let onchange =  Rc::new(onchange);
@@ -75,17 +99,17 @@ pub fn MoveLineSpeed(
 
     Effect::new( move || {
         let container_element = container_ref.get().unwrap();
-        let container_width = container_element.client_width() as u8;
+        let container_width = container_element.client_width() as u32;
 
         let onchange1 = onchange.clone();
         #[allow(unused)]
         use_event_listener(container_ref, ev::mousedown, move |event| {            
             set_is_mouse_down.set(true);
             
-            let bar_width = event.offset_x() as u8;
+            let bar_width = event.offset_x() as u32;
             set_bar_width.set(calc_bar_width(bar_width, container_width));
 
-            onchange1(calc_value(initial_speed, MAX_SPEED));
+            onchange1(calc_value(bar_width, container_width, max_value.get()));
         });
 
         let onchange2 = onchange.clone();
@@ -95,10 +119,10 @@ pub fn MoveLineSpeed(
                 return;
             }
 
-            let bar_width = event.offset_x() as u8;
+            let bar_width = event.offset_x() as u32;
             set_bar_width.set(calc_bar_width(bar_width, container_width));
 
-            onchange2(calc_value(initial_speed, MAX_SPEED));
+            onchange2(calc_value(bar_width, container_width, max_value.get()));
         });
 
         let onchange3 = onchange.clone();
@@ -110,10 +134,10 @@ pub fn MoveLineSpeed(
 
             set_is_mouse_down.set(false);
 
-            let bar_width = event.offset_x() as u8;
+            let bar_width = event.offset_x() as u32;
             set_bar_width.set(calc_bar_width(bar_width, container_width));
 
-            onchange3(calc_value(initial_speed, MAX_SPEED));
+            onchange3(calc_value(bar_width, container_width, max_value.get()));
         });
 
         #[allow(unused)]
@@ -124,7 +148,7 @@ pub fn MoveLineSpeed(
 
     view! {
         <div 
-            class="move-line move-line_speed"
+            class=class
             node_ref=container_ref
         >
             <div 
@@ -135,10 +159,13 @@ pub fn MoveLineSpeed(
     }
 }
 
-fn calc_bar_width(bar_width: u8, container_width: u8) -> u8 {
-    f64::trunc((bar_width as f64 / container_width as f64) * 100.0) as u8
+fn calc_bar_width(bar_width: u32, container_width: u32) -> u32 {
+    f64::trunc((bar_width as f64 / container_width as f64) * 100.0) as u32
 }
 
-fn calc_value(bar_width: u8, container_width: u8) -> u8 {
-    123
+fn calc_value(bar_width: u32, container_width: u32, max_value: u32) -> u32 {
+    let source = bar_width as f64 / (container_width as f64 / 100.0);
+    let target = (max_value as f64 / 100.0) * source;
+
+    f64::trunc(target) as u32
 }
