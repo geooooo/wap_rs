@@ -1,9 +1,11 @@
 use leptos::prelude::*;
+use leptos::html;
+use leptos::ev::MouseEvent;
 use crate::state::PlayState;
 
 #[component]
 pub fn PrevFlatButton(
-    onclick: impl Fn() + 'static,
+    onclick: impl Fn(bool) + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
@@ -16,7 +18,7 @@ pub fn PrevFlatButton(
 #[component]
 pub fn PlayFlatButton(
     play_state: Signal<Option<PlayState>>,
-    onclick: impl Fn() + Clone + Send + 'static,
+    onclick: impl Fn(bool) + Clone + Send + 'static,
 ) -> impl IntoView {
     view! {
         {move || {
@@ -50,7 +52,7 @@ pub fn PlayFlatButton(
 
 #[component]
 pub fn NextFlatButton(
-    onclick: impl Fn() + 'static,
+    onclick: impl Fn(bool) + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
@@ -62,10 +64,12 @@ pub fn NextFlatButton(
 
 #[component]
 pub fn ListFlatButton(
-    onclick: impl Fn() + 'static,
+    node_ref: NodeRef<html::Button>,
+    onclick: impl Fn(bool) + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
+            node_ref=Some(node_ref)
             kind=FlatButtonKind::List
             onclick
         />
@@ -74,10 +78,12 @@ pub fn ListFlatButton(
 
 #[component]
 pub fn RandomFlatButton(
-    onclick: impl Fn() + 'static,
+    node_ref: NodeRef<html::Button>,
+    onclick: impl Fn(bool) + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
+            node_ref=Some(node_ref)
             kind=FlatButtonKind::Random
             onclick
         />
@@ -86,10 +92,12 @@ pub fn RandomFlatButton(
 
 #[component]
 pub fn LoopFlatButton(
-    onclick: impl Fn() + 'static,
+    node_ref: NodeRef<html::Button>,
+    onclick: impl Fn(bool) + 'static,
 ) -> impl IntoView {
     view! {
         <FlatButton 
+            node_ref=Some(node_ref)
             kind=FlatButtonKind::Loop
             onclick
         />
@@ -144,25 +152,34 @@ impl FlatButtonKind {
 
 #[component]
 fn FlatButton(
+    #[prop(default = None)]
+    node_ref: Option<NodeRef<html::Button>>,
     kind: FlatButtonKind,
-    onclick: impl Fn() + 'static,
+    onclick: impl Fn(bool) + 'static,
 ) -> impl IntoView {
     const BASE_CLASS: &str = "flat-button";
+
+    let node_ref: NodeRef<html::Button> = node_ref.unwrap_or_else(|| NodeRef::new());
 
     let (is_pressed, set_is_pressed) = signal(false);
 
     let class = format!("{BASE_CLASS} {}", kind.class());
 
-    let onclick = move |_| {
+    let onclick = move |event: MouseEvent| {
         if kind.can_pressed() {
             set_is_pressed.set(!is_pressed.get());
         }
 
-        onclick();
+        let button_element = node_ref.get().unwrap();
+        let _ = button_element.blur();
+
+        onclick(event.is_trusted());
     };
 
     view! {
         <button 
+            node_ref=node_ref
+            tabindex="-1"
             class=class
             class:flat-button_down=move || is_pressed.get()
             on:click=onclick

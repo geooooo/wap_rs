@@ -1,16 +1,21 @@
+use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::*;
+use leptos::html;
 use super::move_line::*;
 use super::flat_button::*;
 use super::equalizer::Equalizer;
 use super::logo::Logo;
 use super::track_list::TrackList;
 use crate::state::{AppState, HelpTarget};
+use crate::web::init_global_key_event_handlers;
 
-// TODO: hot keys: space - play/pause, enter - toggle list, arrows to select track, r - random, l - loop, p - pause/play, +/- - volume
-// TODO: backspace - delete track, shift+lclick select range of tracks, cmd+lclick select single track
-// TODO: cmd+a select all tracks, esc clear selection, click on track - select as played but not play now and pause
 #[component]
 pub fn App() -> impl IntoView {
+    let random_button_ref: NodeRef<html::Button> = NodeRef::new();
+    let loop_button_ref: NodeRef<html::Button> = NodeRef::new();
+    let list_button_ref: NodeRef<html::Button> = NodeRef::new();
+
+
     let (state, set_state) = signal(AppState::default());
 
     let help_text = 
@@ -22,6 +27,12 @@ pub fn App() -> impl IntoView {
     let current_time = 
         Signal::derive(move || state.get().get_time());
 
+    let volume = 
+        Signal::derive(move || {
+            console_log(format!("app {}", state.get().get_volume()).as_str());
+            state.get().get_volume()
+        });
+
     let play_state = 
         Signal::derive(move || state.get().get_play_state());
 
@@ -31,21 +42,61 @@ pub fn App() -> impl IntoView {
     let tracks = 
         Signal::derive(move || state.get().get_tracks());
 
-    let on_play_button_click = move || 
+
+    let on_prev_button_click = |_| {};
+
+    let on_next_button_click = |_| {};
+
+    let on_play_button_click = move |_| 
         set_state.update(|state| state.toggle_play_state());
 
-    let on_random_button_click = move || 
-        set_state.update(|state| state.toggle_random());
+    let on_random_button_click = move |is_user|
+        set_state.update(|state| {
+            state.toggle_random();
 
-    let on_loop_button_click = move || 
-        set_state.update(|state| state.toggle_loop());
+            if is_user {
+                state.update_help_text(HelpTarget::RandomButton);
+            } else {
+                state.hide_help_text();
+            }
+        });
 
-    let on_list_button_click = move || 
-        set_state.update(|state| state.toggle_track_list_visibility());
+    let on_loop_button_click = move |is_user| 
+        set_state.update(|state| {
+            state.toggle_loop();
 
-    let on_prev_button_click = || {};
+            if is_user {
+                state.update_help_text(HelpTarget::LoopButton);
+            } else {
+                state.hide_help_text();
+            }
+        });
 
-    let on_next_button_click = || {};
+    let on_list_button_click = move |is_user| 
+        set_state.update(|state| {
+            state.toggle_track_list_visibility();
+
+            if is_user {
+                state.update_help_text(HelpTarget::ListButton);
+            } else {
+                state.hide_help_text();
+            }
+        });
+
+    let random_button_click = move ||
+        random_button_ref.get().unwrap().click();
+
+    let loop_button_click = move || 
+        loop_button_ref.get().unwrap().click();
+
+    let list_button_click = move || 
+        list_button_ref.get().unwrap().click();
+
+    let change_volume = move |is_inc| if is_inc {
+        set_state.update(|state| state.inc_volume())
+    } else {
+        set_state.update(|state| state.dec_volume())
+    };
 
     let on_volume_change = move |volume|
         set_state.update(|state| state.set_volume(volume));
@@ -74,6 +125,16 @@ pub fn App() -> impl IntoView {
     let on_list_button_hover = move |_|
         set_state.update(|state| state.update_help_text(HelpTarget::ListButton));
 
+
+    init_global_key_event_handlers(
+        random_button_click,
+        loop_button_click,
+        list_button_click,
+        move || on_play_button_click(false),
+        change_volume,
+    );
+
+
     view! {
         <div class="app__controls">
             <div class="controls__top">
@@ -89,7 +150,7 @@ pub fn App() -> impl IntoView {
             <div class="controls__bottom">
                 <div class="controls__col">
                     <MoveLineVolume 
-                        initial_volume=state.get_untracked().get_volume()
+                        volume
                         max_volume=AppState::MAX_VOLUME
                         onchange=on_volume_change
                         on:mouseenter=on_volume_hover
@@ -115,16 +176,19 @@ pub fn App() -> impl IntoView {
 
                 <div class="controls__row">
                     <ListFlatButton 
+                        node_ref=list_button_ref
                         onclick=on_list_button_click
                         on:mouseenter=on_list_button_hover
                     />
 
                     <RandomFlatButton 
+                        node_ref=random_button_ref
                         onclick=on_random_button_click
                         on:mouseenter=on_random_button_hover
                     />
 
                     <LoopFlatButton 
+                        node_ref=loop_button_ref
                         onclick=on_loop_button_click
                         on:mouseenter=on_loop_button_hover
                     />

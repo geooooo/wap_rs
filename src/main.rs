@@ -1,5 +1,6 @@
 mod components;
 mod state;
+mod web;
 
 use leptos::prelude::*;
 use components::App;

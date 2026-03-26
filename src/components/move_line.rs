@@ -1,4 +1,5 @@
 use leptos::ev;
+use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::*;
 use leptos::html;
 use leptos_use::{use_event_listener, use_throttle_fn_with_arg};
@@ -22,18 +23,22 @@ pub fn MoveLineTime(
 
 #[component]
 pub fn MoveLineVolume(
-    initial_volume: u8,
+    volume: Signal<u8>,
     max_volume: u8,
     onchange: impl Fn(u8) + Clone + 'static,
 ) -> impl IntoView {
-    let initial_volume = Signal::derive(move || initial_volume as u32);
+   let volume_u32 = Signal::derive(move || {
+        let val = volume.get();
+        console_log(format!("ml {}", val).as_str());
+        val as u32
+    });
     let max_volume = Signal::derive(move || max_volume as u32);
     let onchange = move |value: u32| onchange(value as u8);
 
     view! {
         <MoveLine 
             kind=MoveLineKind::Volume
-            value=initial_volume
+            value=volume_u32
             max_value=max_volume
             onchange
         />
@@ -107,8 +112,8 @@ fn MoveLine(
         let container_width = container_element.client_width() as u32;
 
         let onchange1 = onchange.clone();
-        #[allow(unused)]
-        use_event_listener(container_ref, ev::mousedown, move |event| {            
+   
+        let _ = use_event_listener(container_ref, ev::mousedown, move |event| {            
             set_is_mouse_down.set(true);
             
             let bar_width = event.offset_x() as u32;
@@ -118,8 +123,7 @@ fn MoveLine(
         });
 
         let onchange2 = onchange.clone();
-        #[allow(unused)]
-        use_event_listener(container_ref, ev::mousemove, move |event| {
+        let _ = use_event_listener(container_ref, ev::mousemove, move |event| {
             if !is_mouse_down.get() {
                 return;
             }
@@ -131,8 +135,7 @@ fn MoveLine(
         });
 
         let onchange3 = onchange.clone();
-        #[allow(unused)]
-        use_event_listener(container_ref, ev::mouseup, move |event| {
+        let _ = use_event_listener(container_ref, ev::mouseup, move |event| {
             if !is_mouse_down.get() {
                 return;
             }
@@ -145,8 +148,7 @@ fn MoveLine(
             onchange3(calc_value(bar_width, container_width, max_value.get()));
         });
 
-        #[allow(unused)]
-        use_event_listener(container_ref, ev::mouseleave, move |_| {
+        let _ = use_event_listener(container_ref, ev::mouseleave, move |_| {
             set_is_mouse_down.set(false);
         });
     });

@@ -1,6 +1,14 @@
 use leptos::prelude::*;
 use crate::state::{AppState, Track as TrackModel};
 
+// TODO: click on track - select as played but not play now and pause
+// shift+lclick select range of tracks
+// cmd+lclick select single track
+// cmd+a select all tracks
+// "ArrowUp" | "ArrowLeft" => return leptos::logging::debug_log!("up"),
+//             "ArrowDown" | "ArrowRight" => return leptos::logging::debug_log!("down"),
+//             "Backspace" => return leptos::logging::debug_log!("back"),
+//             "Escape" => return leptos::logging::debug_log!("esc"),
 #[component]
 pub fn TrackList(
     is_hidden: Signal<bool>,

@@ -33,6 +33,7 @@ impl Default for AppState {
 impl AppState {
     pub const MAX_SPEED: u8 = 200;
     pub const MAX_VOLUME: u8 = 100;
+    pub const VOLUME_STEP: u8 = 10;
 
     pub fn format_time(time: u32) -> String {
         let hours = time / 3600;
@@ -58,10 +59,32 @@ impl AppState {
         self.update_help_text(HelpTarget::SpeedLine);
     }
 
+    pub fn inc_volume(&mut self) {
+        if self.volume == Self::MAX_VOLUME {
+            return;
+        }
+
+        let m = self.volume % Self::VOLUME_STEP;
+        self.volume += if m == 0 { Self::VOLUME_STEP } else { Self::VOLUME_STEP - m };
+    }
+
+    pub fn dec_volume(&mut self) {
+        if self.volume == 0 {
+            return;
+        }
+
+        let m = self.volume % Self::VOLUME_STEP;
+        self.volume -= if m == 0 { Self::VOLUME_STEP } else { m };
+    }
+
     pub fn set_volume(&mut self, volume: u8) {
         self.volume = volume;
 
         self.update_help_text(HelpTarget::VolumeLine);
+    }
+
+    pub fn hide_help_text(&mut self) {
+        self.help_text = String::new();
     }
 
     pub fn update_help_text(&mut self, target: HelpTarget) {
@@ -101,20 +124,14 @@ impl AppState {
 
     pub fn toggle_track_list_visibility(&mut self) {
         self.track_list_state.is_visible = !self.track_list_state.is_visible;
-
-        self.update_help_text(HelpTarget::ListButton);
     }
 
     pub fn toggle_random(&mut self) {
         self.is_random = !self.is_random;
-
-        self.update_help_text(HelpTarget::RandomButton);
     }
 
     pub fn toggle_loop(&mut self) {
         self.is_loop = !self.is_loop;
-
-        self.update_help_text(HelpTarget::LoopButton);
     }
 
     pub fn toggle_play_state(&mut self) {
