@@ -2,3 +2,6 @@
 
 dev:
 	trunk serve
+
+clean:
+	trunk clean

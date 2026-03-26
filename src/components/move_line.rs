@@ -1,5 +1,4 @@
 use leptos::ev;
-use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::*;
 use leptos::html;
 use leptos_use::{use_event_listener, use_throttle_fn_with_arg};
@@ -23,22 +22,14 @@ pub fn MoveLineTime(
 
 #[component]
 pub fn MoveLineVolume(
-    volume: Signal<u8>,
-    max_volume: u8,
-    onchange: impl Fn(u8) + Clone + 'static,
+    volume: Signal<u32>,
+    max_volume: Signal<u32>,
+    onchange: impl Fn(u32) + Clone + 'static,
 ) -> impl IntoView {
-   let volume_u32 = Signal::derive(move || {
-        let val = volume.get();
-        console_log(format!("ml {}", val).as_str());
-        val as u32
-    });
-    let max_volume = Signal::derive(move || max_volume as u32);
-    let onchange = move |value: u32| onchange(value as u8);
-
     view! {
         <MoveLine 
             kind=MoveLineKind::Volume
-            value=volume_u32
+            value=volume
             max_value=max_volume
             onchange
         />
@@ -48,18 +39,14 @@ pub fn MoveLineVolume(
 
 #[component]
 pub fn MoveLineSpeed(
-    initial_speed: u8,
-    max_speed: u8,
-    onchange: impl Fn(u8) + Clone + 'static,
+    speed: Signal<u32>,
+    max_speed: Signal<u32>,
+    onchange: impl Fn(u32) + Clone + 'static,
 ) -> impl IntoView {
-    let initial_speed = Signal::derive(move || initial_speed as u32);
-    let max_speed = Signal::derive(move || max_speed as u32);
-    let onchange = move |value: u32| onchange(value as u8);
-
     view! {
         <MoveLine 
             kind=MoveLineKind::Speed
-            value=initial_speed
+            value=speed
             max_value=max_speed
             onchange
         />
@@ -93,14 +80,17 @@ fn MoveLine(
     const THROTTLE_TIME: f64 = 100.0;
 
     let (is_mouse_down, set_is_mouse_down) = signal(false);
-    let bar_width_init_fn = move || calc_bar_width(value.get(), max_value.get());
-    let (bar_width, set_bar_width) = signal(bar_width_init_fn());
+    let (bar_width, set_bar_width) = signal(0u32);
 
     let class = format!("{BASE_CLASS} {}", kind.class());
 
     let onchange = use_throttle_fn_with_arg(onchange, THROTTLE_TIME);
     let onchange =  Rc::new(onchange);
     let container_ref: NodeRef<html::Div> = NodeRef::new();
+
+    Effect::new( move || {
+        set_bar_width.set(calc_bar_width(value.get(), max_value.get()));
+    });
 
     Effect::new( move || {
         let has_played_track = max_value.get() != 0;
@@ -112,7 +102,6 @@ fn MoveLine(
         let container_width = container_element.client_width() as u32;
 
         let onchange1 = onchange.clone();
-   
         let _ = use_event_listener(container_ref, ev::mousedown, move |event| {            
             set_is_mouse_down.set(true);
             

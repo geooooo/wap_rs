@@ -18,7 +18,7 @@ pub struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            help_text: String::from("asdfsdfsdaf"),
+            help_text: String::new(),
             play_state: None,
             track_list_state: TrackListState::default(),
             is_loop: false,

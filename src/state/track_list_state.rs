@@ -11,10 +11,8 @@ impl Default for TrackListState {
     fn default() -> Self {
         Self {
             is_visible: true,
-            track: Some(Track::new("name".to_string(), 3652)),
-            tracks: vec![
-                Track::new("name".to_string(), 3652),
-            ],
+            track: None,
+            tracks: vec![],
         }
     }
 }
