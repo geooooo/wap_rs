@@ -5,11 +5,16 @@ use leptos::leptos_dom::helpers::window;
 use leptos::ev;
 
 pub fn init_global_key_event_handlers(
-    on_random_key: impl Fn() + 'static,
-    on_loop_key: impl Fn() + 'static,
-    on_list_key: impl Fn() + 'static,
-    on_play_key: impl Fn() + 'static,
-    on_volume_key: impl Fn(bool) + 'static,
+    on_random: impl Fn() + 'static,
+    on_loop: impl Fn() + 'static,
+    on_list: impl Fn() + 'static,
+    on_play: impl Fn() + 'static,
+    on_volume: impl Fn(bool) + 'static,
+    on_next: impl Fn() + 'static,
+    on_prev: impl Fn() + 'static,
+    on_remove: impl Fn() + 'static,
+    on_deselect_all: impl Fn() + 'static,
+    on_select_all: impl Fn() + 'static,
 ) {
     let window = window();
     let document = window.document().unwrap();
@@ -26,12 +31,17 @@ pub fn init_global_key_event_handlers(
 
     let _ = use_event_listener(window.clone(), ev::keyup, move |event| {
         match event.key().as_str() {
-            "r" | "R" | "к" | "К" => on_random_key(),
-            "l" | "L" | "д" | "Д" => on_loop_key(),
-            "Enter" => on_list_key(),
-            " " | "p" | "P" | "з" | "З" => on_play_key(),
-            "+" => on_volume_key(true),
-            "-" => on_volume_key(false),
+            "r" | "R" | "к" | "К" => on_random(),
+            "l" | "L" | "д" | "Д" => on_loop(),
+            "Enter" => on_list(),
+            " " | "p" | "P" | "з" | "З" => on_play(),
+            "+" => on_volume(true),
+            "-" => on_volume(false),
+            "ArrowUp" | "ArrowLeft" => on_prev(),
+            "ArrowDown" | "ArrowRight" => on_next(),
+            "Backspace" => on_remove(),
+            "Escape" => on_deselect_all(),
+            "a" | "A" | "ф" | "Ф" if event.meta_key() => on_select_all(),
             _ => return,
         }
 

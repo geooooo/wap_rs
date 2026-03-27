@@ -7,3 +7,5 @@ edition = "2024"
 console_error_panic_hook = "0.1.7"
 leptos = { version = "0.8.17", features = ["csr"] }
 leptos-use = "0.18.3"
+rand = "0.8" # or whichever version you are using
+getrandom = { version = "0.2", features = ["js"] }

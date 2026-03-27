@@ -16,34 +16,26 @@ pub fn PrevFlatButton(
 
 #[component]
 pub fn PlayFlatButton(
-    play_state: Signal<Option<PlayState>>,
+    play_state: Signal<PlayState>,
     onclick: impl Fn() + Clone + Send + 'static,
 ) -> impl IntoView {
     view! {
         {move || {
             let onclick = onclick.clone();
 
-            match play_state.get() { 
-                None => view! {
+            match play_state.get() {
+                PlayState::Play => view! {
+                    <FlatButton 
+                        kind=FlatButtonKind::Pause
+                        onclick
+                    />
+                }.into_any(),
+                PlayState::NoTrack | PlayState::Pause => view! {
                     <FlatButton 
                         kind=FlatButtonKind::Play
                         onclick
                     />
-                }.into_any(),    
-                Some(ref play_state) => match play_state {
-                    PlayState::Play => view! {
-                        <FlatButton 
-                            kind=FlatButtonKind::Play
-                            onclick
-                        />
-                    }.into_any(),
-                    PlayState::Pause =>view! {
-                        <FlatButton 
-                            kind=FlatButtonKind::Pause
-                            onclick
-                        />
-                    }.into_any(), 
-                },
+                }.into_any(), 
             }
         }}
     }

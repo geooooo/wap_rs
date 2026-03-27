@@ -5,7 +5,7 @@ use super::flat_button::*;
 use super::equalizer::Equalizer;
 use super::logo::Logo;
 use super::track_list::TrackList;
-use crate::state::{AppState, HelpTarget};
+use crate::state::{AppState, HelpTarget, PlayState};
 use crate::web::init_global_key_event_handlers;
 
 #[component]
@@ -39,12 +39,38 @@ pub fn App() -> impl IntoView {
         Signal::derive(move || state.get().get_tracks());
 
 
-    let on_prev_button_click = || {};
+    let on_prev_button_click = move ||
+        state.update(|state| {
+            state.set_prev_track();
+            state.set_play_state();
+            
+            match state.get_track() {
+                None => (),
+                Some(_) => (), // play
+            }
+        });
 
-    let on_next_button_click = || {};
+    let on_next_button_click = move ||
+        state.update(|state| {
+            state.set_next_track();
+            state.set_play_state();
+            
+            match state.get_track() {
+                None => (),
+                Some(_) => (), // play
+            }
+        });
 
     let on_play_button_click = move || 
-        state.update(|state| state.toggle_play_state());
+        state.update(|state| {
+            state.toggle_play_state();
+
+            match state.get_play_state() {
+                PlayState::NoTrack => (),
+                PlayState::Play => (), //play
+                PlayState::Pause => (), //pause
+            }
+        });
 
     let on_random_button_click = move ||
         state.update(|state| state.toggle_random());
@@ -54,23 +80,6 @@ pub fn App() -> impl IntoView {
 
     let on_list_button_click = move || 
         state.update(|state| state.toggle_track_list_visibility());
-
-
-    let random_button_click = move || 
-        random_button_ref.get().unwrap().click();
-
-    let loop_button_click = move || 
-        loop_button_ref.get().unwrap().click();
-
-    let list_button_click = move || 
-        list_button_ref.get().unwrap().click();
-
-    let change_volume = move |is_inc| 
-        if is_inc {
-            state.update(|state| state.inc_volume());
-        } else {
-            state.update(|state| state.dec_volume());
-        };
 
 
     let on_volume_change = move |volume|
@@ -101,6 +110,29 @@ pub fn App() -> impl IntoView {
     let on_list_button_hover = move |_|
         state.update(|state| state.set_help_text(HelpTarget::ListButton));
 
+    
+    let random_button_click = move || 
+        random_button_ref.get().unwrap().click();
+
+    let loop_button_click = move || 
+        loop_button_ref.get().unwrap().click();
+
+    let list_button_click = move || 
+        list_button_ref.get().unwrap().click();
+
+    let change_volume = move |is_inc| 
+        if is_inc {
+            state.update(|state| state.inc_volume());
+        } else {
+            state.update(|state| state.dec_volume());
+        };
+
+    let remove_selected_tracks = || {};
+
+    let deselect_all_tracks = || {};
+
+    let select_all_tracks = || {};
+
 
     init_global_key_event_handlers(
         random_button_click,
@@ -108,6 +140,11 @@ pub fn App() -> impl IntoView {
         list_button_click,
         on_play_button_click,
         change_volume,
+        on_next_button_click,
+        on_prev_button_click,
+        remove_selected_tracks,
+        deselect_all_tracks,
+        select_all_tracks,
     );
 
 

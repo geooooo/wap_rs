@@ -2,4 +2,5 @@
 pub enum PlayState {
     Play,
     Pause,
+    NoTrack,
 }

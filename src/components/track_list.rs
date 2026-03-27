@@ -4,11 +4,6 @@ use crate::state::{AppState, Track as TrackModel};
 // TODO: click on track - select as played but not play now and pause
 // shift+lclick select range of tracks
 // cmd+lclick select single track
-// cmd+a select all tracks
-// "ArrowUp" | "ArrowLeft" => return leptos::logging::debug_log!("up"),
-//             "ArrowDown" | "ArrowRight" => return leptos::logging::debug_log!("down"),
-//             "Backspace" => return leptos::logging::debug_log!("back"),
-//             "Escape" => return leptos::logging::debug_log!("esc"),
 #[component]
 pub fn TrackList(
     is_hidden: Signal<bool>,
@@ -30,11 +25,13 @@ pub fn TrackList(
                 <div class="track-list__container">
                     <ForEnumerate
                         each=move || tracks.get()
-                        key=|track| track.name.clone()
+                        key=|track| format!("{}{}{}", track.name, track.is_played, track.is_selected)
                         children={move |_, track: TrackModel| view! {
                             <Track 
                                 name=track.name 
                                 duration=track.duration
+                                is_selected=track.is_selected
+                                is_played=track.is_played
                             />
                         }}
                     />
@@ -48,11 +45,17 @@ pub fn TrackList(
 fn Track(
     name: String,
     duration: u32,
+    is_selected: bool,
+    is_played: bool,
 ) -> impl IntoView {
     let formatted_duration = AppState::format_time(duration);
 
     view! {
-        <div class="track">
+        <div 
+            class:track_selected=is_selected
+            class:track_played=is_played
+            class="track"
+        >
             <div class="track__title">
                 {name}
             </div>
