@@ -1,7 +1,8 @@
+use web_sys as web;
 use leptos::web_sys::HtmlElement;
 use leptos::wasm_bindgen::JsCast;
 use leptos::{ev, html, prelude::*};
-use leptos_use::use_event_listener;
+use leptos_use::{UseEventListenerOptions, use_event_listener, use_event_listener_with_options};
 use crate::state::{AppState, Track as TrackModel};
 
 #[component]
@@ -9,8 +10,38 @@ pub fn TrackList(
     is_hidden: Signal<bool>,
     tracks: Signal<Vec<TrackModel>>,
     onclick: impl Fn(String, bool, bool) + Clone + 'static,
+    onfilesdrop: impl Fn(web::FileList) + 'static,
 ) -> impl IntoView {
     let container_ref: NodeRef<html::Div> = NodeRef::new();
+    let drop_zone_ref: NodeRef<html::Div> = NodeRef::new();
+
+    let _ = use_event_listener_with_options(drop_zone_ref, ev::dragenter, move |event| {          
+        event.prevent_default();
+        event.stop_propagation();
+    }, UseEventListenerOptions::default().capture(false));
+
+    let _ = use_event_listener_with_options(drop_zone_ref, ev::dragover, move |event| {          
+        event.prevent_default();
+        event.stop_propagation();
+    }, UseEventListenerOptions::default().capture(false));
+
+    let _ = use_event_listener_with_options(drop_zone_ref, ev::drag, move |event| {          
+        event.prevent_default();
+        event.stop_propagation();
+    }, UseEventListenerOptions::default().capture(false));
+
+    let _ = use_event_listener_with_options(drop_zone_ref, ev::dragleave, move |event| {          
+        event.prevent_default();
+        event.stop_propagation();
+    }, UseEventListenerOptions::default().capture(false));
+
+    let _ = use_event_listener_with_options(drop_zone_ref, ev::drop, move |event| {          
+        event.prevent_default();
+        event.stop_propagation();
+
+        let files = event.data_transfer().unwrap().files().unwrap();
+        onfilesdrop(files);
+    }, UseEventListenerOptions::default().capture(false));
 
     let _ = use_event_listener(container_ref, ev::mouseup, move |event| {          
         if let Some(target) = event.target() && let Ok(mut element) = target.dyn_into::<HtmlElement>() {
@@ -38,6 +69,7 @@ pub fn TrackList(
     
     view! {
         <div 
+            node_ref=drop_zone_ref
             class="track-list"
             class:track-list_hidden=is_hidden
         >

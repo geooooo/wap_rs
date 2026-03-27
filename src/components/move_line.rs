@@ -22,14 +22,10 @@ pub fn MoveLineTime(
 
 #[component]
 pub fn MoveLineVolume(
-    volume: Signal<u8>,
-    max_volume: u8,
-    onchange: impl Fn(u8) + Clone + 'static,
+    volume: Signal<u32>,
+    max_volume: Signal<u32>,
+    onchange: impl Fn(u32) + Clone + 'static,
 ) -> impl IntoView {
-    let volume = Signal::derive(move || volume.get() as u32);
-    let max_volume = Signal::derive(move || max_volume as u32);
-    let onchange = move |value: u32| onchange(value as u8);
-
     view! {
         <MoveLine 
             kind=MoveLineKind::Volume
@@ -43,14 +39,10 @@ pub fn MoveLineVolume(
 
 #[component]
 pub fn MoveLineSpeed(
-    initial_speed: u8,
-    max_speed: u8,
-    onchange: impl Fn(u8) + Clone + 'static,
+    initial_speed: Signal<u32>,
+    max_speed: Signal<u32>,
+    onchange: impl Fn(u32) + Clone + 'static,
 ) -> impl IntoView {
-    let initial_speed = Signal::derive(move || initial_speed as u32);
-    let max_speed = Signal::derive(move || max_speed as u32);
-    let onchange = move |value: u32| onchange(value as u8);
-
     view! {
         <MoveLine 
             kind=MoveLineKind::Speed
@@ -77,6 +69,7 @@ impl MoveLineKind  {
     }
 }
 
+// TODO: fix width on switch track
 #[component]
 fn MoveLine(
     kind: MoveLineKind,

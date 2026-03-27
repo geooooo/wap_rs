@@ -48,6 +48,10 @@ impl AppState {
         }
     }
 
+    pub fn update_tracks(&mut self, tracks: Vec<Track>) {
+        self.track_list_state.tracks = tracks;
+    }
+
     pub fn update_track_state(&mut self, track_name: String, is_selected: bool, is_played: bool) {
         if let Some(ref mut played_track) = self.track_list_state.played_track && played_track.name == track_name {
             played_track.is_selected = is_selected;

@@ -2,17 +2,19 @@
 pub struct Track {
     pub name: String,
     pub duration: u32,
+    pub data: String,
     pub is_selected: bool,
     pub is_played: bool,
 }
 
 impl Track {
-    pub fn new(name: String, duration: u32, s:bool,p:bool) -> Self {
+    pub fn new(name: String, data: String, duration: u32) -> Self {
         Self {
             name,
             duration,
-            is_selected: s,
-            is_played: p,
+            data,
+            is_selected: false,
+            is_played: false,
         }
     }
 }

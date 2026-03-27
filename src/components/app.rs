@@ -1,12 +1,14 @@
+use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::*;
 use leptos::html;
+use wasm_bindgen_futures::spawn_local;
 use super::move_line::*;
 use super::flat_button::*;
 use super::equalizer::Equalizer;
 use super::logo::Logo;
 use super::track_list::TrackList;
 use crate::state::{AppState, HelpTarget, PlayState};
-use crate::web::init_global_key_event_handlers;
+use crate::web::{init_global_key_event_handlers, Player};
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -14,26 +16,54 @@ pub fn App() -> impl IntoView {
     let loop_button_ref: NodeRef<html::Button> = NodeRef::new();
     let list_button_ref: NodeRef<html::Button> = NodeRef::new();
 
+    let player = Player::new();
 
     let state = RwSignal::new(AppState::default());
 
-    let help_text = 
-        Signal::derive(move || state.get().get_help_text());
+    let help_text = create_read_slice(
+        state,
+        |state| state.get_help_text(),
+    );
 
-    let duration = 
-        Signal::derive(move || state.get().get_track_duration());
+    let duration = create_read_slice(
+        state,
+        |state| state.get_track_duration(),
+    );
 
-    let current_time = 
-        Signal::derive(move || state.get().get_time());
+    let current_time = create_read_slice(
+        state,
+        |state| state.get_time(),
+    );
 
-    let volume = 
-        Signal::derive(move || state.get().get_volume());
+    let max_volume = create_read_slice(
+        state,
+        |_| AppState::MAX_VOLUME as u32,
+    );
 
-    let play_state = 
-        Signal::derive(move || state.get().get_play_state());
+    let volume = create_read_slice(
+        state,
+        |state| state.get_volume() as u32,
+    );
 
-    let is_track_list_hidden = 
-        Signal::derive(move || !state.get().is_track_list_visible());
+    let max_speed = create_read_slice(
+        state,
+        |_| AppState::MAX_SPEED as u32,
+    );
+
+    let initial_speed = create_read_slice(
+        state,
+        |state| state.get_speed() as u32,
+    );
+
+    let play_state = create_read_slice(
+        state,
+        |state| state.get_play_state(),
+    );
+
+    let is_track_list_hidden = create_read_slice(
+        state,
+        |state| !state.is_track_list_visible(),
+    );
 
     let tracks = 
         Signal::derive(move || state.get().get_tracks());
@@ -87,6 +117,16 @@ pub fn App() -> impl IntoView {
 
     let on_list_button_click = move || 
         state.update(|state| state.toggle_track_list_visibility());
+
+    let on_files_drop = move |files| {
+        let current_tracks = state.get().get_tracks();
+        let player = player.clone();
+        spawn_local(async move {
+            let updated_tracks = player.parse_files(files, current_tracks).await;
+            state.update(|state| state.update_tracks(updated_tracks));
+        });
+    };
+        
 
 
     let on_volume_change = move |volume|
@@ -174,13 +214,13 @@ pub fn App() -> impl IntoView {
                 <div class="controls__col">
                     <MoveLineVolume 
                         volume
-                        max_volume=AppState::MAX_VOLUME
+                        max_volume
                         onchange=on_volume_change
                         on:mouseenter=on_volume_hover
                     />
                     <MoveLineSpeed
-                        initial_speed=state.get_untracked().get_speed()
-                        max_speed=AppState::MAX_SPEED
+                        initial_speed
+                        max_speed
                         onchange=on_speed_change
                         on:mouseenter=on_speed_hover
                     />
@@ -228,6 +268,7 @@ pub fn App() -> impl IntoView {
                 is_hidden=is_track_list_hidden
                 tracks
                 onclick=on_track_list_click
+                onfilesdrop=on_files_drop
             />
         </div>
     }
