@@ -48,6 +48,51 @@ impl AppState {
         }
     }
 
+    pub fn update_track_state(&mut self, track_name: String, is_selected: bool, is_played: bool) {
+        if let Some(ref mut played_track) = self.track_list_state.played_track && played_track.name == track_name {
+            played_track.is_selected = is_selected;
+        }
+
+        let track_from_list = self.track_list_state.tracks.iter_mut().find(|track| track.name == track_name).unwrap();
+        track_from_list.is_selected = is_selected;
+
+        if is_played && !track_from_list.is_played {
+            track_from_list.is_played = true;
+            self.track_list_state.played_track = Some(track_from_list.clone());
+
+            for track in &mut self.track_list_state.tracks {
+                if track.name != track_name {
+                    track.is_played = false;
+                }
+            }
+
+            self.set_play_state();
+
+            //TODO:play
+        }
+    }
+
+    pub fn remove_selected_tracks(&mut self) {
+        if let Some(ref played_track) = self.track_list_state.played_track && played_track.is_selected {
+            self.track_list_state.played_track = None;
+            self.play_state = PlayState::NoTrack;
+        }
+
+        self.track_list_state.tracks = self.track_list_state.tracks
+            .clone()
+            .into_iter()
+            .filter(|track| !track.is_selected)
+            .collect();
+    }
+
+    pub fn select_all_tracks(&mut self) {
+        self.select_or_deselect_all_tracks(true);
+    }
+
+    pub fn deselect_all_tracks(&mut self) {
+        self.select_or_deselect_all_tracks(false);
+    }
+
     pub fn set_next_track(&mut self) {
         self.set_next_or_prev_track(true);
     }
@@ -215,6 +260,10 @@ impl AppState {
         if !self.track_list_state.has_played_track() {
             return Some(rng.gen_range(0..self.track_list_state.tracks.len()));
         }
+
+        if self.track_list_state.tracks.len() == 1 {
+            return Some(0);
+        }
         
         loop {
             let random_index = rng.gen_range(0..self.track_list_state.tracks.len());
@@ -274,6 +323,10 @@ impl AppState {
     }
 
     fn set_next_or_prev_track(&mut self, is_next: bool) {
+        if self.track_list_state.has_played_track() && self.track_list_state.tracks.len() == 1 {
+            return;
+        }
+
         match self.get_next_or_prev_track(is_next) {
             None => (),
             Some((next_track, prev_index)) => {
@@ -284,6 +337,16 @@ impl AppState {
                     self.track_list_state.tracks[prev_index].is_played = false;
                 }
             }
+        }
+    }
+
+    fn select_or_deselect_all_tracks(&mut self, is_select: bool) {
+        for track in &mut self.track_list_state.tracks {
+            track.is_selected = is_select;
+        }
+
+        if self.track_list_state.has_played_track() {
+            self.track_list_state.played_track.as_mut().unwrap().is_selected = is_select;
         }
     }
 }

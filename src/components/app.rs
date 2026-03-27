@@ -46,7 +46,7 @@ pub fn App() -> impl IntoView {
             
             match state.get_track() {
                 None => (),
-                Some(_) => (), // play
+                Some(_) => (), //TODO:play
             }
         });
 
@@ -57,7 +57,7 @@ pub fn App() -> impl IntoView {
             
             match state.get_track() {
                 None => (),
-                Some(_) => (), // play
+                Some(_) => (), //TODO:play
             }
         });
 
@@ -67,9 +67,16 @@ pub fn App() -> impl IntoView {
 
             match state.get_play_state() {
                 PlayState::NoTrack => (),
-                PlayState::Play => (), //play
-                PlayState::Pause => (), //pause
+                PlayState::Play => (), //TODO:play
+                PlayState::Pause => (), //TODO:pause
             }
+        });
+
+    let on_track_list_click = move |track_name, is_selected, is_played|
+        state.update(|state| { 
+            state.update_track_state(track_name, is_selected, is_played);
+
+            //TODO:play
         });
 
     let on_random_button_click = move ||
@@ -127,11 +134,14 @@ pub fn App() -> impl IntoView {
             state.update(|state| state.dec_volume());
         };
 
-    let remove_selected_tracks = || {};
+    let remove_selected_tracks = move ||
+        state.update(|state| state.remove_selected_tracks());
 
-    let deselect_all_tracks = || {};
+    let deselect_all_tracks = move ||
+        state.update(|state| state.deselect_all_tracks());
 
-    let select_all_tracks = || {};
+    let select_all_tracks = move ||
+        state.update(|state| state.select_all_tracks());
 
 
     init_global_key_event_handlers(
@@ -217,6 +227,7 @@ pub fn App() -> impl IntoView {
             <TrackList 
                 is_hidden=is_track_list_hidden
                 tracks
+                onclick=on_track_list_click
             />
         </div>
     }

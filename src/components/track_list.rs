@@ -1,14 +1,41 @@
-use leptos::prelude::*;
+use leptos::web_sys::HtmlElement;
+use leptos::wasm_bindgen::JsCast;
+use leptos::{ev, html, prelude::*};
+use leptos_use::use_event_listener;
 use crate::state::{AppState, Track as TrackModel};
 
-// TODO: click on track - select as played but not play now and pause
-// shift+lclick select range of tracks
-// cmd+lclick select single track
 #[component]
 pub fn TrackList(
     is_hidden: Signal<bool>,
     tracks: Signal<Vec<TrackModel>>,
+    onclick: impl Fn(String, bool, bool) + Clone + 'static,
 ) -> impl IntoView {
+    let container_ref: NodeRef<html::Div> = NodeRef::new();
+
+    let _ = use_event_listener(container_ref, ev::mouseup, move |event| {          
+        if let Some(target) = event.target() && let Ok(mut element) = target.dyn_into::<HtmlElement>() {
+            if !element.class_list().contains("track") {
+                element = element.parent_element().unwrap().dyn_into::<HtmlElement>().unwrap();
+            }
+
+            let track_name = element.query_selector(".track__title").unwrap().unwrap().text_content().unwrap();
+
+            if event.meta_key() {
+                element.class_list().toggle("track_selected").unwrap();
+                
+                let is_selected = element.class_list().contains("track_selected");
+                let is_played = element.class_list().contains("track_played");    
+                onclick(track_name, is_selected, is_played);
+            } else {
+                element.class_list().add_1("track_played").unwrap();
+
+                let is_selected = element.class_list().contains("track_selected");
+                let is_played = element.class_list().contains("track_played");   
+                onclick(track_name, is_selected, is_played);
+            }
+        }
+    });
+    
     view! {
         <div 
             class="track-list"
@@ -22,7 +49,9 @@ pub fn TrackList(
                     </div>
                 }
             >
-                <div class="track-list__container">
+                <div 
+                    node_ref=container_ref
+                    class="track-list__container">
                     <ForEnumerate
                         each=move || tracks.get()
                         key=|track| format!("{}{}{}", track.name, track.is_played, track.is_selected)

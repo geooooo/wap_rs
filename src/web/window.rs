@@ -41,8 +41,17 @@ pub fn init_global_key_event_handlers(
             "ArrowDown" | "ArrowRight" => on_next(),
             "Backspace" => on_remove(),
             "Escape" => on_deselect_all(),
+            _ => (),
+        }
+
+        event.stop_propagation();
+        event.prevent_default();
+    });
+
+    let _ = use_event_listener(window.clone(), ev::keydown, move |event| {
+        match event.key().as_str() {
             "a" | "A" | "ф" | "Ф" if event.meta_key() => on_select_all(),
-            _ => return,
+            _ => (),
         }
 
         event.stop_propagation();
