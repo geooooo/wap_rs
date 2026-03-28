@@ -12,3 +12,4 @@ getrandom = { version = "0.2", features = ["js"] }
 web-sys = { version = "0.3.91", features = ["AudioContext", "MediaElementAudioSourceNode", "AnalyserNode", "AudioDestinationNode", "FileReader", "Blob"] }
 wasm-bindgen = "0.2.114"
 wasm-bindgen-futures = "0.4.64"
+futures = "0.3.32"

@@ -1,3 +1,4 @@
+use futures::future::join_all;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
@@ -56,7 +57,8 @@ impl Player {
     }
 
     pub async fn parse_files(&self, files: FileList, current_tracks: Vec<TrackUiState>) -> Vec<TrackFileState> {
-        let mut new_tracks = Vec::with_capacity(files.length() as usize);
+        let mut futures = vec![];
+        let mut file_names = vec![];
 
         for i in 0..files.length() {
             let file = files.get(i).unwrap();
@@ -65,13 +67,16 @@ impl Player {
                 continue;
             }
 
-            let name = file.name().clone();
-            let (data, duration) = self.get_track_duration(file).await;
-
-            new_tracks.push(TrackFileState::new(name, data, duration));
+            file_names.push(file.name());
+            futures.push(self.get_track_duration(file));
         }
 
-        new_tracks
+        join_all(futures)
+            .await.drain(..)
+            .zip(file_names.drain(..))
+            .map(|((data, duration), name)| 
+                TrackFileState::new(name, data, duration)
+            ).collect()
     }
 
     fn is_track_exists(&self, file: &File, current_tracks: &[TrackUiState]) -> bool {
