@@ -77,7 +77,7 @@ impl Player {
         let _ = self.audio.pause();
     }
 
-    pub fn play_track(&self, data: String) {
+    pub fn play_track(&self, data: Arc<String>) {
         let audio = self.audio.clone();
         
         spawn_local(async move {
@@ -101,7 +101,6 @@ impl Player {
 
             JsFuture::from(audio_oncanplay_promise).await.unwrap();
             JsFuture::from(audio.play().unwrap()).await.unwrap();
-            console_log(format!("{} {} {} {}", data.len(), audio.volume(), audio.playback_rate(), audio.current_time()).as_str());
         });
     }
 

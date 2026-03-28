@@ -22,7 +22,7 @@ pub fn App() -> impl IntoView {
     let player = Arc::new(Player::new(
         state.with_untracked(|state| state.get_volume()),
         state.with_untracked(|state| state.get_speed()),
-        move |time| state.update(|state| state.set_current_time(time)),
+        move |time| state.update(|state| state.set_time(time)),
     ));
 
     let help_text = create_read_slice(
@@ -189,7 +189,7 @@ pub fn App() -> impl IntoView {
     let player9 = player.clone();
     let on_current_time_change = move |time|
         state.update(|state| {
-            state.set_current_time(time);
+            state.set_time(time);
             console_log(format!("{}", time).as_str());
 
             player9.set_time(time);
@@ -203,7 +203,16 @@ pub fn App() -> impl IntoView {
         state.update(|state| state.set_help_text(HelpTarget::SpeedLine));
 
     let on_current_time_hover = move |_| 
-        state.update(|state| state.set_help_text(HelpTarget::TimeLine));
+        state.update(|state| {
+            state.set_is_time_hovered(true);
+            state.set_help_text(HelpTarget::TimeLine);
+        });
+
+    let on_current_time_not_hover = move |_| 
+        state.update(|state| {
+            state.set_is_time_hovered(false);
+            state.set_help_text(HelpTarget::TimeLine);
+        });
 
     let on_loop_button_hover = move |_| 
         state.update(|state| state.set_help_text(HelpTarget::LoopButton));
@@ -278,6 +287,7 @@ pub fn App() -> impl IntoView {
                     duration
                     onchange=on_current_time_change
                     on:mouseenter=on_current_time_hover
+                    on:mouseleave=on_current_time_not_hover
                 />
             </div>
 

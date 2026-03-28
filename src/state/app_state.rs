@@ -1,3 +1,5 @@
+use std::sync::Arc;
+use leptos::leptos_dom::logging::console_log;
 use rand::{self, Rng};
 use super::play_state::PlayState;
 use super::track_file_state::TrackFileState;
@@ -9,11 +11,12 @@ pub struct AppState {
     play_state: PlayState,
     track_index: Option<usize>,
     ui_tracks: Vec<TrackUiState>, 
-    tracks_data: Vec<String>,
+    tracks_data: Vec<Arc<String>>,
     help_text: String,
     is_track_list_visible: bool,
     is_loop: bool,
     is_random: bool,
+    is_time_hovered: bool,
     time: u32,
     volume: u8,
     speed: u8,
@@ -30,6 +33,7 @@ impl Default for AppState {
             is_track_list_visible: true,
             is_loop: false,
             is_random: false,
+            is_time_hovered: false,
             time: 0,
             volume: 100,
             speed: 100,
@@ -57,7 +61,7 @@ impl AppState {
     pub fn update_tracks(&mut self, new_tracks: Vec<TrackFileState>) {
         new_tracks.into_iter().for_each(|new_track| {
             self.ui_tracks.push(TrackUiState::new(new_track.name, new_track.duration));
-            self.tracks_data.push(new_track.data);
+            self.tracks_data.push(Arc::new(new_track.data));
         });
     }
 
@@ -121,14 +125,10 @@ impl AppState {
         self.set_next_or_prev_track(false);
     }
 
-    pub fn set_current_time(&mut self, time: u32) {
+    pub fn set_time(&mut self, time: u32) {
         self.time = time;
 
         self.set_help_text(HelpTarget::TimeLine);
-    }
-
-    pub fn set_time(&mut self, time: u32) {
-        self.time = time;
     }
 
     pub fn set_speed(&mut self, speed: u8) {
@@ -163,6 +163,16 @@ impl AppState {
 
     pub fn set_help_text(&mut self, target: HelpTarget) {
         match target {
+            HelpTarget::TimeLine if self.is_time_hovered => self.help_text = 
+                if let Some(index) = self.track_index {
+                    format!(
+                        "{} / {}", 
+                        AppState::format_time(self.time), 
+                        AppState::format_time(self.ui_tracks[index].duration),
+                    )
+                } else {
+                    "-- / --".to_string()
+                },
             HelpTarget::ListButton => self.help_text =
                 if self.is_track_list_visible {
                     "Hide track list".to_string()
@@ -181,18 +191,9 @@ impl AppState {
                 } else {
                     "On cicle repeat for played track".to_string()
                 },
-            HelpTarget::TimeLine => self.help_text = 
-                if let Some(index) = self.track_index {
-                    format!(
-                        "{} / {}", 
-                        AppState::format_time(self.time), 
-                        AppState::format_time(self.ui_tracks[index].duration),
-                    )
-                } else {
-                    "-- / --".to_string()
-                },
             HelpTarget::SpeedLine => self.help_text = format!("Speed: {}%", self.speed),
             HelpTarget::VolumeLine => self.help_text = format!("Volume: {}%", self.volume),
+            _ => (),
         };
     }
 
@@ -212,6 +213,10 @@ impl AppState {
         self.is_loop = !self.is_loop;
 
         self.set_help_text(HelpTarget::LoopButton);
+    }
+
+    pub fn set_is_time_hovered(&mut self, is_time_hovered: bool) {
+        self.is_time_hovered = is_time_hovered;
     }
 
     pub fn set_play_state(&mut self) {
@@ -277,7 +282,7 @@ impl AppState {
         self.ui_tracks.clone()
     }
 
-    pub fn get_track(&self) -> Option<String> {
+    pub fn get_track(&self) -> Option<Arc<String>> {
         match self.track_index {
             None => None,
             Some(index) => Some(self.tracks_data[index].clone()),
@@ -370,15 +375,18 @@ impl AppState {
 
     fn remove_and_reallocate_selected_tracks(&mut self) {
         let mut new_ui_tracks: Vec<TrackUiState> = vec![];
-        let mut tracks_data: Vec<String> = vec![];
+        let mut tracks_data: Vec<Arc<String>> = vec![];
 
         self.ui_tracks
             .drain(..)
-            .zip(self.tracks_data.drain(..))
+            .zip(
+                self.tracks_data.drain(..)
+                .map(|track_arc| Arc::try_unwrap(track_arc).unwrap())
+            )
             .for_each(|(track, data)| {
                 if !track.is_selected {
                     new_ui_tracks.push(track);
-                    tracks_data.push(data)
+                    tracks_data.push(Arc::new(data));
                 }
             });
         
