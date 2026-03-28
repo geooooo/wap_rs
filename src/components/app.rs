@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::*;
 use leptos::html;
 use wasm_bindgen_futures::spawn_local;
@@ -21,6 +22,7 @@ pub fn App() -> impl IntoView {
     let player = Arc::new(Player::new(
         state.with_untracked(|state| state.get_volume()),
         state.with_untracked(|state| state.get_speed()),
+        move |time| state.update(|state| state.set_current_time(time)),
     ));
 
     let help_text = create_read_slice(
@@ -188,6 +190,7 @@ pub fn App() -> impl IntoView {
     let on_current_time_change = move |time|
         state.update(|state| {
             state.set_current_time(time);
+            console_log(format!("{}", time).as_str());
 
             player9.set_time(time);
         });
