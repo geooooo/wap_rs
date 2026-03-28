@@ -1,14 +1,17 @@
 use rand::{self, Rng};
 use super::play_state::PlayState;
-use super::track_list_state::TrackListState;
-use super::track::Track;
+use super::track_file_state::TrackFileState;
+use super::track_ui_state::TrackUiState;
 use super::help_target::HelpTarget;
 
 #[derive(Clone)]
 pub struct AppState {
     play_state: PlayState,
-    track_list_state: TrackListState,
+    track_index: Option<usize>,
+    ui_tracks: Vec<TrackUiState>, 
+    tracks_data: Vec<String>,
     help_text: String,
+    is_track_list_visible: bool,
     is_loop: bool,
     is_random: bool,
     time: u32,
@@ -19,9 +22,22 @@ pub struct AppState {
 impl Default for AppState {
     fn default() -> Self {
         Self {
-            help_text: String::new(),
             play_state: PlayState::NoTrack,
-            track_list_state: TrackListState::default(),
+            track_index: None,
+            ui_tracks: vec![
+                TrackUiState::new("1".to_string(), 100),
+                TrackUiState::new("2".to_string(), 150),
+                TrackUiState::new("3".to_string(), 4000),
+                TrackUiState::new("4".to_string(), 194),
+            ],
+            tracks_data: vec![
+                "".to_string(),
+                "".to_string(),
+                "".to_string(),
+                "".to_string(),
+            ],
+            help_text: String::new(),
+            is_track_list_visible: true,
             is_loop: false,
             is_random: false,
             time: 0,
@@ -48,45 +64,57 @@ impl AppState {
         }
     }
 
-    pub fn update_tracks(&mut self, tracks: Vec<Track>) {
-        self.track_list_state.tracks = tracks;
+    pub fn update_tracks(&mut self, new_tracks: Vec<TrackFileState>) {
+        new_tracks.into_iter().for_each(|new_track| {
+            self.ui_tracks.push(TrackUiState::new(new_track.name, new_track.duration));
+            self.tracks_data.push(new_track.data);
+        });
     }
 
     pub fn update_track_state(&mut self, track_name: String, is_selected: bool, is_played: bool) {
-        if let Some(ref mut played_track) = self.track_list_state.played_track && played_track.name == track_name {
-            played_track.is_selected = is_selected;
+        if let Some(index) = self.track_index && self.ui_tracks[index].name == track_name {
+            self.ui_tracks[index].is_selected = is_selected;
+
+            return;
         }
 
-        let track_from_list = self.track_list_state.tracks.iter_mut().find(|track| track.name == track_name).unwrap();
+        let (index_from_list, track_from_list) = self.ui_tracks
+            .iter_mut()
+            .enumerate()
+            .find(|(_, track)| track.name == track_name).unwrap();
         track_from_list.is_selected = is_selected;
 
         if is_played && !track_from_list.is_played {
             track_from_list.is_played = true;
-            self.track_list_state.played_track = Some(track_from_list.clone());
 
-            for track in &mut self.track_list_state.tracks {
-                if track.name != track_name {
-                    track.is_played = false;
-                }
+            if let Some(index) = self.track_index {
+                self.ui_tracks[index].is_played = false;
             }
+            
+            self.track_index = Some(index_from_list);
 
             self.set_play_state();
-
-            //TODO:play
         }
     }
 
     pub fn remove_selected_tracks(&mut self) {
-        if let Some(ref played_track) = self.track_list_state.played_track && played_track.is_selected {
-            self.track_list_state.played_track = None;
+        if let Some(index) = self.track_index && self.ui_tracks[index].is_selected {
+            self.track_index = None;
             self.play_state = PlayState::NoTrack;
-        }
+            self.time = 0;
 
-        self.track_list_state.tracks = self.track_list_state.tracks
-            .clone()
-            .into_iter()
-            .filter(|track| !track.is_selected)
-            .collect();
+            self.remove_and_reallocate_selected_tracks();
+        } else if let Some(index) = self.track_index {
+            let played_track_name = self.ui_tracks[index].name.clone();
+
+            self.remove_and_reallocate_selected_tracks();
+
+            self.track_index = self.ui_tracks
+                .iter()
+                .position(|track| track.name == played_track_name);
+        } else {
+            self.remove_and_reallocate_selected_tracks();
+        }
     }
 
     pub fn select_all_tracks(&mut self) {
@@ -144,7 +172,7 @@ impl AppState {
     pub fn set_help_text(&mut self, target: HelpTarget) {
         match target {
             HelpTarget::ListButton => self.help_text =
-                if self.track_list_state.is_visible {
+                if self.is_track_list_visible {
                     "Hide track list".to_string()
                 } else {
                     "Show track list".to_string()
@@ -162,11 +190,11 @@ impl AppState {
                     "On cicle repeat for played track".to_string()
                 },
             HelpTarget::TimeLine => self.help_text = 
-                if let Some(ref track) = self.track_list_state.played_track {
+                if let Some(index) = self.track_index {
                     format!(
                         "{} / {}", 
                         AppState::format_time(self.time), 
-                        AppState::format_time(track.duration),
+                        AppState::format_time(self.ui_tracks[index].duration),
                     )
                 } else {
                     format!("-- / --")
@@ -177,7 +205,7 @@ impl AppState {
     }
 
     pub fn toggle_track_list_visibility(&mut self) {
-        self.track_list_state.is_visible = !self.track_list_state.is_visible;
+        self.is_track_list_visible = !self.is_track_list_visible;
 
         self.set_help_text(HelpTarget::ListButton);
     }
@@ -195,7 +223,9 @@ impl AppState {
     }
 
     pub fn set_play_state(&mut self) {
-        self.play_state = if self.track_list_state.has_played_track() {
+        self.time = 0;
+
+        self.play_state = if self.track_index.is_some() {
             PlayState::Play
         } else {
             PlayState::NoTrack
@@ -203,13 +233,12 @@ impl AppState {
     }
 
     pub fn toggle_play_state(&mut self) {
-        if !self.track_list_state.has_played_track() {
+        if self.track_index.is_none() {
             self.set_next_track();
-            self.track_list_state.played_track.as_ref();
         };
 
         self.play_state = match self.play_state {
-            _ if !self.track_list_state.has_played_track() => PlayState::NoTrack,
+            _ if self.track_index.is_none() => PlayState::NoTrack,
             PlayState::Play => PlayState::Pause,
             PlayState::NoTrack | PlayState::Pause => PlayState::Play,
         };
@@ -224,7 +253,7 @@ impl AppState {
     }
 
     pub fn is_track_list_visible(&self) -> bool {
-        self.track_list_state.is_visible
+        self.is_track_list_visible
     }
 
     pub fn get_time(&self) -> u32 {
@@ -240,39 +269,42 @@ impl AppState {
     }
 
     pub fn get_track_duration(&self) -> u32 {
-        match self.track_list_state.played_track {
-            Some(ref track) => track.duration,
+        match self.track_index {
+            Some(index) => self.ui_tracks[index].duration,
             None => 0,
         }
     }
 
-    pub fn get_tracks(&self) -> Vec<Track> {
-        self.track_list_state.tracks.clone()
+    pub fn get_tracks(&self) -> Vec<TrackUiState> {
+        self.ui_tracks.clone()
     }
 
-    pub fn get_track(&self) -> Option<Track> {
-        self.track_list_state.played_track.clone()
+    pub fn get_track(&self) -> Option<&TrackUiState> {
+        match self.track_index {
+            None => None,
+            Some(index) => Some(&self.ui_tracks[index]),
+        }
     }
 
-    fn get_random_track_index(&self) -> Option<usize> {
-        if self.track_list_state.tracks.is_empty() {
+    fn get_random_track_index(&mut self) -> Option<usize> {
+        if self.ui_tracks.is_empty() {
             return None;
         }
-
-        let mut rng = rand::thread_rng();
         
-        if !self.track_list_state.has_played_track() {
-            return Some(rng.gen_range(0..self.track_list_state.tracks.len()));
+        let mut rng = rand::thread_rng();
+
+        if self.track_index.is_none() {
+            return Some(rng.gen_range(0..self.ui_tracks.len()));
         }
 
-        if self.track_list_state.tracks.len() == 1 {
+        if self.ui_tracks.len() == 1 {
             return Some(0);
         }
         
         loop {
-            let random_index = rng.gen_range(0..self.track_list_state.tracks.len());
-            let random_track = &self.track_list_state.tracks[random_index];
-            let played_track = self.track_list_state.played_track.as_ref().unwrap();
+            let random_index = rng.gen_range(0..self.ui_tracks.len());
+            let random_track = &self.ui_tracks[random_index];
+            let played_track = &self.ui_tracks[self.track_index.unwrap()];
 
             if random_track.name != played_track.name {
                 break Some(random_index);
@@ -280,77 +312,83 @@ impl AppState {
         }
     }
 
-    fn get_next_or_prev_track(&mut self, is_next: bool) -> Option<(&mut Track, Option<usize>)> {
-        if !self.track_list_state.has_played_track() {
-            let result = 
-                if self.track_list_state.tracks.is_empty() {
-                    None
-                } else if self.is_random {
-                    let index = self.get_random_track_index().unwrap();
-            
-                    Some((&mut self.track_list_state.tracks[index], None))
-                } else {
-                    let first_track= self.track_list_state.tracks.first_mut().unwrap();
-
-                    Some((first_track, None))
-                };
-
-            return result;
+    fn get_next_or_prev_track_index(&mut self, is_next: bool) -> Option<usize> {
+        if self.track_index.is_none() {
+            return if self.ui_tracks.is_empty() {
+                None
+            } else if self.is_random {
+                self.get_random_track_index()
+            } else {
+                Some(0)
+            };
         }
+        
+        let track_index = self.track_index.unwrap();
 
         if self.is_loop {
-            return Some((self.track_list_state.played_track.as_mut().unwrap(), None));
+            return Some(track_index);
         }
 
-        let played_index = self.track_list_state.tracks
-            .iter()
-            .position(|track| self.track_list_state.played_track.as_ref().unwrap().name == track.name)
-            .unwrap();
-
         if self.is_random {
-            let random_index = self.get_random_track_index().unwrap();
-
-            return Some((&mut self.track_list_state.tracks[random_index], Some(played_index)));
+            return self.get_random_track_index();
         } 
 
         if is_next {
-            if played_index == self.track_list_state.tracks.len() - 1 {
-                Some((&mut self.track_list_state.tracks[0], Some(played_index)))
+            if track_index == self.ui_tracks.len() - 1 {
+                Some(0)
             } else {
-                Some((&mut self.track_list_state.tracks[played_index + 1], Some(played_index)))
+                Some(track_index + 1)
             }
-        } else if played_index == 0 {
-            Some((self.track_list_state.tracks.last_mut().unwrap(), Some(played_index)))
+        } else if track_index == 0 {
+            Some(self.ui_tracks.len() - 1)
         } else {
-            Some((&mut self.track_list_state.tracks[played_index - 1], Some(played_index)))
+            Some(track_index - 1)
         }
     }
 
     fn set_next_or_prev_track(&mut self, is_next: bool) {
-        if self.track_list_state.has_played_track() && self.track_list_state.tracks.len() == 1 {
+        if self.track_index.is_some() && self.ui_tracks.len() == 1 {
             return;
         }
 
-        match self.get_next_or_prev_track(is_next) {
+        match self.get_next_or_prev_track_index(is_next) {
             None => (),
-            Some((next_track, prev_index)) => {
-                next_track.is_played = true;
-                self.track_list_state.played_track = Some(next_track.clone());
-
-                if let Some(prev_index) = prev_index {
-                    self.track_list_state.tracks[prev_index].is_played = false;
+            Some(new_track_index) => {
+                if let Some(track_index) = self.track_index && track_index != new_track_index {
+                    self.ui_tracks[track_index].is_played = false;
                 }
+
+                self.ui_tracks[new_track_index].is_played = true;
+                self.track_index = Some(new_track_index);
             }
         }
     }
 
     fn select_or_deselect_all_tracks(&mut self, is_select: bool) {
-        for track in &mut self.track_list_state.tracks {
+        self.ui_tracks.iter_mut().for_each(|track| {
             track.is_selected = is_select;
-        }
+        });
 
-        if self.track_list_state.has_played_track() {
-            self.track_list_state.played_track.as_mut().unwrap().is_selected = is_select;
+        if let Some(index) = self.track_index {
+            self.ui_tracks[index].is_selected = is_select;
         }
+    }
+
+    fn remove_and_reallocate_selected_tracks(&mut self) {
+        let mut new_ui_tracks: Vec<TrackUiState> = vec![];
+        let mut tracks_data: Vec<String> = vec![];
+
+        self.ui_tracks
+            .drain(..)
+            .zip(self.tracks_data.drain(..))
+            .for_each(|(track, data)| {
+                if !track.is_selected {
+                    new_ui_tracks.push(track);
+                }
+                tracks_data.push(data)
+            });
+        
+        self.ui_tracks = new_ui_tracks;
+        self.tracks_data = tracks_data;
     }
 }

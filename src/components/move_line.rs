@@ -69,7 +69,6 @@ impl MoveLineKind  {
     }
 }
 
-// TODO: fix width on switch track
 #[component]
 fn MoveLine(
     kind: MoveLineKind,

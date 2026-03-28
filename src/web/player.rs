@@ -12,7 +12,7 @@ use web_sys::{
     AnalyserNode,
     js_sys::Promise,
 };
-use crate::state::Track;
+use crate::state::{TrackUiState, TrackFileState};
 
 #[derive(Clone)]
 pub struct Player {
@@ -55,7 +55,7 @@ impl Player {
         &self.audio_buffer
     }
 
-    pub async fn parse_files(&self, files: FileList, mut current_tracks: Vec<Track>) -> Vec<Track> {
+    pub async fn parse_files(&self, files: FileList, current_tracks: Vec<TrackUiState>) -> Vec<TrackFileState> {
         let mut new_tracks = Vec::with_capacity(files.length() as usize);
 
         for i in 0..files.length() {
@@ -68,15 +68,13 @@ impl Player {
             let name = file.name().clone();
             let (data, duration) = self.get_track_duration(file).await;
 
-            new_tracks.push(Track::new(name, data, duration));
+            new_tracks.push(TrackFileState::new(name, data, duration));
         }
 
-        current_tracks.append(&mut new_tracks);
-
-        current_tracks
+        new_tracks
     }
 
-    fn is_track_exists(&self, file: &File, current_tracks: &[Track]) -> bool {
+    fn is_track_exists(&self, file: &File, current_tracks: &[TrackUiState]) -> bool {
         current_tracks.iter().find(|track| track.name == file.name()).is_some()
     }
 

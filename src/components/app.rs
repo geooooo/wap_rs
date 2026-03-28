@@ -1,4 +1,3 @@
-use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::*;
 use leptos::html;
 use wasm_bindgen_futures::spawn_local;
@@ -65,15 +64,16 @@ pub fn App() -> impl IntoView {
         |state| !state.is_track_list_visible(),
     );
 
-    let tracks = 
-        Signal::derive(move || state.get().get_tracks());
+    let tracks = Signal::derive(move || 
+        state.with(|state| state.get_tracks())
+    );
 
 
     let on_prev_button_click = move ||
         state.update(|state| {
             state.set_prev_track();
             state.set_play_state();
-            
+
             match state.get_track() {
                 None => (),
                 Some(_) => (), //TODO:play
@@ -119,15 +119,14 @@ pub fn App() -> impl IntoView {
         state.update(|state| state.toggle_track_list_visibility());
 
     let on_files_drop = move |files| {
-        let current_tracks = state.get().get_tracks();
+        let current_tracks = state.with(|s| s.get_tracks());
         let player = player.clone();
         spawn_local(async move {
-            let updated_tracks = player.parse_files(files, current_tracks).await;
-            state.update(|state| state.update_tracks(updated_tracks));
+            let new_tracks = player.parse_files(files, current_tracks).await;
+            state.update(|state| state.update_tracks(new_tracks));
         });
     };
         
-
 
     let on_volume_change = move |volume|
         state.update(|state| state.set_volume(volume as u8));

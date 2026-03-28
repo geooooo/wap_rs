@@ -3,12 +3,12 @@ use leptos::web_sys::HtmlElement;
 use leptos::wasm_bindgen::JsCast;
 use leptos::{ev, html, prelude::*};
 use leptos_use::{UseEventListenerOptions, use_event_listener, use_event_listener_with_options};
-use crate::state::{AppState, Track as TrackModel};
+use crate::state::{AppState, TrackUiState};
 
 #[component]
 pub fn TrackList(
     is_hidden: Signal<bool>,
-    tracks: Signal<Vec<TrackModel>>,
+    tracks: Signal<Vec<TrackUiState>>,
     onclick: impl Fn(String, bool, bool) + Clone + 'static,
     onfilesdrop: impl Fn(web::FileList) + 'static,
 ) -> impl IntoView {
@@ -86,8 +86,8 @@ pub fn TrackList(
                     class="track-list__container">
                     <ForEnumerate
                         each=move || tracks.get()
-                        key=|track| format!("{}{}{}", track.name, track.is_played, track.is_selected)
-                        children={move |_, track: TrackModel| view! {
+                        key=|track| track.id()
+                        children={move |_, track: TrackUiState| view! {
                             <Track 
                                 name=track.name 
                                 duration=track.duration
