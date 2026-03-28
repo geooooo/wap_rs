@@ -24,18 +24,8 @@ impl Default for AppState {
         Self {
             play_state: PlayState::NoTrack,
             track_index: None,
-            ui_tracks: vec![
-                TrackUiState::new("1".to_string(), 100),
-                TrackUiState::new("2".to_string(), 150),
-                TrackUiState::new("3".to_string(), 4000),
-                TrackUiState::new("4".to_string(), 194),
-            ],
-            tracks_data: vec![
-                "".to_string(),
-                "".to_string(),
-                "".to_string(),
-                "".to_string(),
-            ],
+            ui_tracks: vec![],
+            tracks_data: vec![],
             help_text: String::new(),
             is_track_list_visible: true,
             is_loop: false,
@@ -73,8 +63,6 @@ impl AppState {
 
     pub fn update_track_state(&mut self, track_name: String, is_selected: bool, is_played: bool) {
         if let Some(index) = self.track_index && self.ui_tracks[index].name == track_name {
-            self.ui_tracks[index].is_selected = is_selected;
-
             return;
         }
 
@@ -139,6 +127,10 @@ impl AppState {
         self.set_help_text(HelpTarget::TimeLine);
     }
 
+    pub fn set_time(&mut self, time: u32) {
+        self.time = time;
+    }
+
     pub fn set_speed(&mut self, speed: u8) {
         self.speed = speed;
 
@@ -197,7 +189,7 @@ impl AppState {
                         AppState::format_time(self.ui_tracks[index].duration),
                     )
                 } else {
-                    format!("-- / --")
+                    "-- / --".to_string()
                 },
             HelpTarget::SpeedLine => self.help_text = format!("Speed: {}%", self.speed),
             HelpTarget::VolumeLine => self.help_text = format!("Volume: {}%", self.volume),
@@ -223,8 +215,6 @@ impl AppState {
     }
 
     pub fn set_play_state(&mut self) {
-        self.time = 0;
-
         self.play_state = if self.track_index.is_some() {
             PlayState::Play
         } else {
@@ -232,7 +222,9 @@ impl AppState {
         };
     }
 
-    pub fn toggle_play_state(&mut self) {
+    pub fn toggle_play_state(&mut self) -> (PlayState, PlayState) {
+        let prev_play_state = self.play_state;
+
         if self.track_index.is_none() {
             self.set_next_track();
         };
@@ -242,6 +234,8 @@ impl AppState {
             PlayState::Play => PlayState::Pause,
             PlayState::NoTrack | PlayState::Pause => PlayState::Play,
         };
+
+        (prev_play_state, self.play_state)
     }
 
     pub fn get_help_text(&self) -> String {
@@ -254,6 +248,10 @@ impl AppState {
 
     pub fn is_track_list_visible(&self) -> bool {
         self.is_track_list_visible
+    }
+
+    pub fn is_loop(&self) -> bool {
+        self.is_loop
     }
 
     pub fn get_time(&self) -> u32 {
@@ -279,10 +277,10 @@ impl AppState {
         self.ui_tracks.clone()
     }
 
-    pub fn get_track(&self) -> Option<&TrackUiState> {
+    pub fn get_track(&self) -> Option<String> {
         match self.track_index {
             None => None,
-            Some(index) => Some(&self.ui_tracks[index]),
+            Some(index) => Some(self.tracks_data[index].clone()),
         }
     }
 
@@ -368,10 +366,6 @@ impl AppState {
         self.ui_tracks.iter_mut().for_each(|track| {
             track.is_selected = is_select;
         });
-
-        if let Some(index) = self.track_index {
-            self.ui_tracks[index].is_selected = is_select;
-        }
     }
 
     fn remove_and_reallocate_selected_tracks(&mut self) {
@@ -384,8 +378,8 @@ impl AppState {
             .for_each(|(track, data)| {
                 if !track.is_selected {
                     new_ui_tracks.push(track);
+                    tracks_data.push(data)
                 }
-                tracks_data.push(data)
             });
         
         self.ui_tracks = new_ui_tracks;

@@ -1,7 +1,10 @@
+use std::sync::Arc;
 use futures::future::join_all;
+use leptos::leptos_dom::logging::console_log;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
+use wasm_bindgen_futures::spawn_local;
 use web_sys::{
     ProgressEvent,
     File, 
@@ -17,43 +20,98 @@ use crate::state::{TrackUiState, TrackFileState};
 
 #[derive(Clone)]
 pub struct Player {
-    audio: HtmlAudioElement,
-    audio_context: AudioContext,
-    audio_source: MediaElementAudioSourceNode,
-    audio_analyser: AnalyserNode,
-    audio_buffer: Vec<u8>,
+    audio: Arc<HtmlAudioElement>,
+    _audio_context: AudioContext,
+    _audio_source: MediaElementAudioSourceNode,
+    _audio_analyser: AnalyserNode,
+    _audio_buffer: Vec<u8>,
 }
 
 impl Player {
     const FFT_SIZE: u32 = 256;
 
-    pub fn new() -> Self {
-        let audio = HtmlAudioElement::new().unwrap();
-        let audio_context = AudioContext::new().unwrap();
-        let audio_source = audio_context.create_media_element_source(&audio).unwrap();
+    pub fn new(volume: u8, speed: u8) -> Self {
+        let audio = Arc::new(HtmlAudioElement::new().unwrap());
+        audio.set_volume(volume as f64 / 100.0);
+        audio.set_playback_rate(speed as f64 / 100.0);
+        audio.set_current_time(0.0);
+
+        let _audio_context = AudioContext::new().unwrap();
+        let _audio_source = _audio_context.create_media_element_source(&audio).unwrap();
         
-        let audio_analyser = audio_context.create_analyser().unwrap();
-        audio_analyser.set_fft_size(Self::FFT_SIZE);
+        let _audio_analyser = _audio_context.create_analyser().unwrap();
+        _audio_analyser.set_fft_size(Self::FFT_SIZE);
 
-        audio_source.connect_with_audio_node(&audio_analyser).unwrap();
-        audio_analyser.connect_with_audio_node(&audio_context.destination()).unwrap();
+        _audio_source.connect_with_audio_node(&_audio_analyser).unwrap();
+        _audio_analyser.connect_with_audio_node(&_audio_context.destination()).unwrap();
 
-        let buffer_len = audio_analyser.frequency_bin_count() as usize;
-        let audio_buffer = Vec::<u8>::with_capacity(buffer_len);
+        let buffer_len = _audio_analyser.frequency_bin_count() as usize;
+        let _audio_buffer = Vec::<u8>::with_capacity(buffer_len);
 
         Self {
             audio,
-            audio_context,
-            audio_source,
-            audio_analyser,
-            audio_buffer,
+            _audio_context,
+            _audio_source,
+            _audio_analyser,
+            _audio_buffer,
         }
     }
 
-    pub fn get_audio_buffer(&mut self) -> &[u8] {
-        self.audio_analyser.get_byte_frequency_data(&mut self.audio_buffer);
+    pub fn play(&self) {
+        let _ = self.audio.play();
+    }
 
-        &self.audio_buffer
+    pub fn pause(&self) {
+        let _ = self.audio.pause();
+    }
+
+    pub fn play_track(&self, data: String) {
+        let audio = self.audio.clone();
+        
+        spawn_local(async move {
+            audio.pause().unwrap();
+            audio.set_current_time(0.0);
+            console_log("+1");
+
+            audio.set_src(&data);
+            console_log("+2");
+            let audio_oncanplay_promise = Promise::new(&mut |resolve, _| {
+                let oncanplay = Closure::once(
+                    move |_: ProgressEvent| resolve.call0(&JsValue::NULL).unwrap()
+                );
+
+                audio.set_oncanplay(Some(oncanplay.as_ref().unchecked_ref()));
+                oncanplay.forget();
+            });
+
+            JsFuture::from(audio_oncanplay_promise).await.unwrap();
+            console_log("+3");
+            JsFuture::from(audio.play().unwrap()).await.unwrap();
+            console_log("+4");
+            console_log(format!("{} {} {} {}", data.len(), audio.volume(), audio.playback_rate(), audio.current_time()).as_str());
+        });
+    }
+
+    pub fn set_volume(&self, volume: u8) {
+        self.audio.set_volume(volume as f64 / 100.0);
+    }
+
+    pub fn set_speed(&self, speed: u8) {
+        self.audio.set_playback_rate(speed as f64 / 100.0);
+    }
+
+    pub fn set_time(&self, time: u32) {
+        self.audio.set_current_time(time as f64);
+    }
+
+    pub fn set_loop(&self, is_loop: bool) {
+        self.audio.set_loop(is_loop);
+    }
+
+    pub fn _get_audio_buffer(&mut self) -> &[u8] {
+        self._audio_analyser.get_byte_frequency_data(&mut self._audio_buffer);
+
+        &self._audio_buffer
     }
 
     pub async fn parse_files(&self, files: FileList, current_tracks: Vec<TrackUiState>) -> Vec<TrackFileState> {

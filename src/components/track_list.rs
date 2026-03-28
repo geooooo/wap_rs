@@ -10,7 +10,7 @@ pub fn TrackList(
     is_hidden: Signal<bool>,
     tracks: Signal<Vec<TrackUiState>>,
     onclick: impl Fn(String, bool, bool) + Clone + 'static,
-    onfilesdrop: impl Fn(web::FileList) + 'static,
+    mut onfilesdrop: impl FnMut(web::FileList) + 'static,
 ) -> impl IntoView {
     let container_ref: NodeRef<html::Div> = NodeRef::new();
     let drop_zone_ref: NodeRef<html::Div> = NodeRef::new();
@@ -52,11 +52,14 @@ pub fn TrackList(
             let track_name = element.query_selector(".track__title").unwrap().unwrap().text_content().unwrap();
 
             if event.meta_key() {
-                element.class_list().toggle("track_selected").unwrap();
+                if element.class_list().contains("track_played") {    
+                    return;
+                }
                 
+                element.class_list().toggle("track_selected").unwrap();
                 let is_selected = element.class_list().contains("track_selected");
-                let is_played = element.class_list().contains("track_played");    
-                onclick(track_name, is_selected, is_played);
+                
+                onclick(track_name, is_selected, false);
             } else {
                 element.class_list().add_1("track_played").unwrap();
 

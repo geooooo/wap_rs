@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use leptos::prelude::*;
 use leptos::html;
 use wasm_bindgen_futures::spawn_local;
@@ -15,9 +16,12 @@ pub fn App() -> impl IntoView {
     let loop_button_ref: NodeRef<html::Button> = NodeRef::new();
     let list_button_ref: NodeRef<html::Button> = NodeRef::new();
 
-    let player = Player::new();
-
     let state = RwSignal::new(AppState::default());
+
+    let player = Arc::new(Player::new(
+        state.with_untracked(|state| state.get_volume()),
+        state.with_untracked(|state| state.get_speed()),
+    ));
 
     let help_text = create_read_slice(
         state,
@@ -68,74 +72,125 @@ pub fn App() -> impl IntoView {
         state.with(|state| state.get_tracks())
     );
 
-
-    let on_prev_button_click = move ||
+    let player1 = player.clone();
+    let on_prev_button_click = Arc::new(move ||
         state.update(|state| {
             state.set_prev_track();
             state.set_play_state();
+            state.set_time(0);
 
             match state.get_track() {
                 None => (),
-                Some(_) => (), //TODO:play
-            }
-        });
+                Some(data) => player1.play_track(data),
+            } 
+        }));
 
-    let on_next_button_click = move ||
+    let player2 = player.clone();
+    let on_next_button_click = Arc::new(move || 
         state.update(|state| {
             state.set_next_track();
             state.set_play_state();
+            state.set_time(0);
             
             match state.get_track() {
                 None => (),
-                Some(_) => (), //TODO:play
+                Some(data) => player2.play_track(data),
             }
-        });
+        }));
 
-    let on_play_button_click = move || 
+    let player3 = player.clone();
+    let on_play_button_click = Arc::new(move || {
         state.update(|state| {
-            state.toggle_play_state();
+            let (prev, current) = state.toggle_play_state();
 
-            match state.get_play_state() {
+            match current {
                 PlayState::NoTrack => (),
-                PlayState::Play => (), //TODO:play
-                PlayState::Pause => (), //TODO:pause
+                PlayState::Pause => player3.pause(),
+                PlayState::Play => match prev {
+                    PlayState::NoTrack => {
+                        match state.get_track() {
+                            None => (),
+                            Some(data) => {
+                                state.set_time(0);
+                                player3.play_track(data);
+                            },
+                        }
+                    },
+                    _ => player3.play(),
+                },
             }
         });
+    });
 
+    let player4 = player.clone();
     let on_track_list_click = move |track_name, is_selected, is_played|
         state.update(|state| { 
             state.update_track_state(track_name, is_selected, is_played);
+            state.set_play_state();
 
-            //TODO:play
+            if !is_played {
+                return;
+            }
+
+            match state.get_track() {
+                None => (),
+                Some(data) => {
+                    state.set_time(0);
+                    player4.play_track(data);
+                },
+            }
         });
 
     let on_random_button_click = move ||
         state.update(|state| state.toggle_random());
 
+    let player5 = player.clone();
     let on_loop_button_click = move || 
-        state.update(|state| state.toggle_loop());
+        state.update(|state| {
+            state.toggle_loop();
+
+            player5.set_loop(state.is_loop());
+        });
 
     let on_list_button_click = move || 
         state.update(|state| state.toggle_track_list_visibility());
 
+    let player6 = player.clone();
     let on_files_drop = move |files| {
-        let current_tracks = state.with(|s| s.get_tracks());
-        let player = player.clone();
+        let player6 = player6.clone();
+
         spawn_local(async move {
-            let new_tracks = player.parse_files(files, current_tracks).await;
+            let current_tracks = state.with_untracked(|s| s.get_tracks());
+            let new_tracks = player6.parse_files(files, current_tracks).await;
+
             state.update(|state| state.update_tracks(new_tracks));
         });
     };
         
 
+    let player7 = player.clone();
     let on_volume_change = move |volume|
-        state.update(|state| state.set_volume(volume as u8));
+        state.update(|state| {
+            state.set_volume(volume as u8);
 
+            player7.set_volume(volume as u8);
+        });
+
+    let player8 = player.clone();
     let on_speed_change = move |speed|
-        state.update(|state| state.set_speed(speed as u8));
+        state.update(|state| {
+            state.set_speed(speed as u8);
 
+            player8.set_speed(speed as u8);
+        });
+
+    let player9 = player.clone();
     let on_current_time_change = move |time|
-        state.update(|state| state.set_current_time(time));
+        state.update(|state| {
+            state.set_current_time(time);
+
+            player9.set_time(time);
+        });
 
 
     let on_volume_hover = move |_|
@@ -166,12 +221,17 @@ pub fn App() -> impl IntoView {
     let list_button_click = move || 
         list_button_ref.get().unwrap().click();
 
+    let player10 = player.clone();
     let change_volume = move |is_inc| 
-        if is_inc {
-            state.update(|state| state.inc_volume());
-        } else {
-            state.update(|state| state.dec_volume());
-        };
+        state.update(|state| {
+            if is_inc {
+                state.inc_volume();
+            } else {
+                state.dec_volume()
+            }
+
+            player10.set_volume(state.get_volume());
+        });
 
     let remove_selected_tracks = move ||
         state.update(|state| state.remove_selected_tracks());
@@ -187,10 +247,19 @@ pub fn App() -> impl IntoView {
         random_button_click,
         loop_button_click,
         list_button_click,
-        on_play_button_click,
+        { 
+            let handler = on_play_button_click.clone(); 
+            move || handler() 
+        },
         change_volume,
-        on_next_button_click,
-        on_prev_button_click,
+        { 
+            let handler = on_next_button_click.clone(); 
+            move || handler() 
+        },
+        { 
+            let handler = on_prev_button_click.clone(); 
+            move || handler() 
+        },
         remove_selected_tracks,
         deselect_all_tracks,
         select_all_tracks,
@@ -226,14 +295,14 @@ pub fn App() -> impl IntoView {
                 </div>
 
                 <div class="controls__row">
-                    <PrevFlatButton onclick=on_prev_button_click />
+                    <PrevFlatButton onclick=move || on_prev_button_click() />
 
                     <PlayFlatButton 
                         play_state=play_state
-                        onclick=on_play_button_click
+                        onclick=move || on_play_button_click()
                     />
 
-                    <NextFlatButton onclick=on_next_button_click />
+                    <NextFlatButton onclick=move || on_next_button_click() />
                 </div>
 
                 <div class="controls__row">

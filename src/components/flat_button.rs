@@ -19,25 +19,22 @@ pub fn PlayFlatButton(
     play_state: Signal<PlayState>,
     onclick: impl Fn() + Clone + Send + 'static,
 ) -> impl IntoView {
-    view! {
-        {move || {
-            let onclick = onclick.clone();
-
-            match play_state.get() {
-                PlayState::Play => view! {
-                    <FlatButton 
-                        kind=FlatButtonKind::Pause
-                        onclick
-                    />
-                }.into_any(),
-                PlayState::NoTrack | PlayState::Pause => view! {
-                    <FlatButton 
-                        kind=FlatButtonKind::Play
-                        onclick
-                    />
-                }.into_any(), 
-            }
-        }}
+    move || match play_state.get() {
+        PlayState::Play =>
+            view! {
+                <FlatButton 
+                    kind=FlatButtonKind::Pause
+                    onclick=onclick.clone()
+                />
+            }.into_any(),
+        PlayState::NoTrack | PlayState::Pause => {
+            view! {
+                <FlatButton 
+                    kind=FlatButtonKind::Play
+                    onclick=onclick.clone()
+                />
+            }.into_any()
+        }
     }
 }
 
@@ -146,7 +143,7 @@ fn FlatButton(
     #[prop(default = None)]
     node_ref: Option<NodeRef<html::Button>>,
     kind: FlatButtonKind,
-    onclick: impl Fn() + 'static,
+    mut onclick: impl FnMut() + 'static,
 ) -> impl IntoView {
     const BASE_CLASS: &str = "flat-button";
 
