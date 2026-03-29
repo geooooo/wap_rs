@@ -34,9 +34,6 @@ impl Player {
         let audio = Arc::new(HtmlAudioElement::new().unwrap());
         audio.set_volume(volume as f64 / 100.0);
         audio.set_playback_rate(speed as f64 / 100.0);
-        audio.set_current_time(0.0);
-        audio.set_preload("metadata");
-        audio.set_autoplay(false);
 
         let audio0 = audio.clone();
         let ontimeupdate = Closure::wrap(Box::new(move |_e: Event| {
@@ -81,6 +78,8 @@ impl Player {
 
         *onanimationframe_clone.borrow_mut() = Some(Closure::wrap(Box::new(move || {
             if !audio.paused() {
+                let _ = audio_context.resume();
+
                 let audio_buffer = Arc::make_mut(&mut audio_buffer);
                 audio_analyser.get_byte_frequency_data(audio_buffer);
 
@@ -153,10 +152,9 @@ impl Player {
         let audio = self.audio.clone();
         
         spawn_local(async move {
-            audio.pause().unwrap();
-            audio.set_current_time(0.0);
-
             audio.set_src(&data);
+            audio.load();
+
             let audio_oncanplay_promise = Promise::new(&mut |resolve, _| {
                 let audio0 = audio.clone();
 

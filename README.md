@@ -2,8 +2,9 @@
 
 * The perfect reimplemetation of [old project](https://github.com/geooooo/wap-web_audio_player).
 * You can take a look [live app here](https://geooooo.github.io/wap_rs/).
-* First release - concept and maybe I will improve it in a future.
 * Built with Rust + Wasm + Leptos.
+
+![UI of player](assets/screen.png)
 
 ## Features
 

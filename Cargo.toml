@@ -9,7 +9,7 @@ leptos = { version = "0.8.17", features = ["csr"] }
 leptos-use = "0.18.3"
 rand = "0.8" # or whichever version you are using
 getrandom = { version = "0.2", features = ["js"] }
-web-sys = { version = "0.3.91", features = ["AudioContext", "MediaElementAudioSourceNode", "AnalyserNode", "AudioDestinationNode", "FileReader", "Blob"] }
+web-sys = { version = "0.3.91", features = ["Blob", "ProgressEvent", "Event", "File", "FileList", "HtmlAudioElement", "AudioContext", "HtmlElement", "MediaElementAudioSourceNode", "AnalyserNode", "AudioNode", "Window", "FileReader", "AudioDestinationNode"] }
 wasm-bindgen = "0.2.114"
 wasm-bindgen-futures = "0.4.64"
 futures = "0.3.32"
