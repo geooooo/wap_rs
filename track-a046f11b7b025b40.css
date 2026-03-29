@@ -1,0 +1,30 @@
+.track {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  color: var(--color-text-inactive);
+  transition-duration: var(--transition-duration);
+  transition-timing-function: var(--transition-timing-function);
+  transition-property: color, background-color;
+}
+
+.track:hover {
+  color: var(--color-text-active);
+}
+
+.track_selected {
+  color: var(--color-text-active) !important;
+  background-color: var(--color-control-active) !important;
+}
+
+.track_played {
+  color: var(--color-text-active);
+  background-color: var(--color-control-inactive);
+}
+
+.track__title {
+  padding-right: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

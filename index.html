@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>WAP-rs</title>
+
+    
+    
+    
+    <link rel="stylesheet" href="./vars-74f9bf72557e043.css" integrity="sha384-PmSPFdcfaPgmmWLaqxOtH+qdzjJbgx80ssNQhCaB4sikMccd2dIDSK01VdhNW2zV"/>
+    <link rel="stylesheet" href="./reset-24d01d7572b485db.css" integrity="sha384-MjYS+18cyRlpf25QofiZpBEOMsFAvIScVw4F5+QJNhHb3ipvyR1leRp6E8znoKa0"/>
+    <link rel="stylesheet" href="./font-b57ef17970974087.css" integrity="sha384-wU+tJ/OmUmwTL7ho/xebscz3Wsf8hnnpHljVBp/i0Ru2D0/dTW6CF3d6nNTUYVys"/>
+    <link rel="stylesheet" href="./flat-button-e477ae8a4d38acda.css" integrity="sha384-ng9Qkd7VWeTeEMNHV1xvXN1BQvtNAPAjpZYvGwpkIK2BDSeOmVqVTqHgVVCqtK7j"/>
+    <link rel="stylesheet" href="./move-line-7d72533fcc55a57d.css" integrity="sha384-h8HvTq9z53zACJIPh/081nQj7+roN2QMOWWRy6I5Am92KcDpZjNMFbqKwRI0e3/J"/>
+    <link rel="stylesheet" href="./equalizer-b5826419ba1ab46e.css" integrity="sha384-H+45NqAZDuN40VqLKjwukxdmzR+XtzGEG85El11pjIVS7SeVvLMK6BtwtPRzHQ36"/>
+    <link rel="stylesheet" href="./logo-ac731517b3846042.css" integrity="sha384-Etx9DdgaET9AAK2KNpnA4Mj7SzLYja8W8tupNt9NoNQICrwKki+ceCkY7hzwuDP+"/>
+    <link rel="stylesheet" href="./helper-text-7550d5a85ac1a5cc.css" integrity="sha384-xssSpcYxJqzCKgLZmGNfxPTLOeEBUrjc3Er9nEeuHskneLpIn3LiYRKYqIyplFgi"/>
+    <link rel="stylesheet" href="./track-list-53c5e754d0726067.css" integrity="sha384-lzwEgeAnvHSNImHrFceTfmTaxsGgWVIdYJyJ2bUMfkpiN0sJUeIQopBsUUwdeGCN"/>
+    <link rel="stylesheet" href="./track-a046f11b7b025b40.css" integrity="sha384-AkSfikmPCw6imw9QgLtBk9L2EdBsFrNyQEc/zPooDTX56KGD9uUjlTHnuukgAxlw"/>
+    <link rel="stylesheet" href="./media-4886e550bb013c1f.css" integrity="sha384-2Kx7DdbrL5OirtPaXJChH7cNICBMAN8exhEMbAWF5mpxrtxjI5TnCtKc2ivKenGc"/>
+    <link rel="stylesheet" href="./app-c104f88d66c26521.css" integrity="sha384-88cV7gbbgjazG6pmTGNpmQYMqa/CLTKE8XkDApyy+EVBjYbtvWGH7BZFXdThslgy"/>
+  <link rel="modulepreload" href="./wap_rs-1e860d7ef230d810.js" crossorigin="anonymous" integrity="sha384-CR/4McDhqnxQ6VWGv7B7fLuoDmixeuNV+u8l/6yystE+TfZSi5LFXDO5TwowXCa+"><link rel="preload" href="./wap_rs-1e860d7ef230d810_bg.wasm" crossorigin="anonymous" integrity="sha384-YBroHl1H8wMAJGDQmnK9k8u64yCjo7n7Ufy7UjvyNgemYXyXLYO1D72Qlg3w0Pv2" as="fetch" type="application/wasm"></head>
+  
+  <body class="app">
+<script type="module">
+import init, * as bindings from './wap_rs-1e860d7ef230d810.js';
+const wasm = await init({ module_or_path: './wap_rs-1e860d7ef230d810_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script></body>
+</html>
