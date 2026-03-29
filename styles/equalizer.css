@@ -27,8 +27,9 @@
   height: 0;
   width: 30px;
   background-color: var(--color-control-inactive);
-  animation-direction: alternate;
-  animation-iteration-count: 0;
+  transition-property: height;
+  transition-duration: 0.2s;
+  transition-timing-function: linear;
 }
 
 .equalizer__level:last-child {

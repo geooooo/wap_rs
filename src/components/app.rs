@@ -1,7 +1,7 @@
 use std::sync::Arc;
-use leptos::leptos_dom::logging::console_log;
 use leptos::prelude::*;
 use leptos::html;
+use leptos_use::signal_throttled;
 use wasm_bindgen_futures::spawn_local;
 use super::move_line::*;
 use super::flat_button::*;
@@ -20,9 +20,11 @@ pub fn App() -> impl IntoView {
     let state = RwSignal::new(AppState::default());
 
     let player = Arc::new(Player::new(
+        AppState::EQUALIZER_LEVEL_COUNT,
         state.with_untracked(|state| state.get_volume()),
         state.with_untracked(|state| state.get_speed()),
         move |time| state.update(|state| state.set_time(time)),
+        move |equalizer_levels| state.update(|state| state.set_equalizer_levels(equalizer_levels)),
     ));
 
     let help_text = create_read_slice(
@@ -70,9 +72,15 @@ pub fn App() -> impl IntoView {
         |state| !state.is_track_list_visible(),
     );
 
+    let levels = signal_throttled(
+        Signal::derive(move || state.with(|state| state.get_equalizer_levels())),
+        50.0,
+    );
+
     let tracks = Signal::derive(move || 
         state.with(|state| state.get_tracks())
     );
+
 
     let player1 = player.clone();
     let on_prev_button_click = Arc::new(move ||
@@ -107,7 +115,10 @@ pub fn App() -> impl IntoView {
 
             match current {
                 PlayState::NoTrack => (),
-                PlayState::Pause => player3.pause(),
+                PlayState::Pause => {
+                    player3.pause();
+                    state.clear_equalizer_levels();
+                }
                 PlayState::Play => match prev {
                     PlayState::NoTrack => {
                         match state.get_track() {
@@ -190,7 +201,6 @@ pub fn App() -> impl IntoView {
     let on_current_time_change = move |time|
         state.update(|state| {
             state.set_time(time);
-            console_log(format!("{}", time).as_str());
 
             player9.set_time(time);
         });
@@ -281,7 +291,10 @@ pub fn App() -> impl IntoView {
     view! {
         <div class="app__controls">
             <div class="controls__top">
-                <Equalizer help_text />
+                <Equalizer 
+                    levels
+                    help_text 
+                />
                 <MoveLineTime 
                     current_time
                     duration

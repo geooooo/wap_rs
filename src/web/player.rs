@@ -1,6 +1,6 @@
 use std::sync::Arc;
+use std::cell::RefCell;
 use futures::future::join_all;
-use leptos::leptos_dom::logging::console_log;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
@@ -13,32 +13,31 @@ use web_sys::{
     FileReader,
     HtmlAudioElement,
     AudioContext,
-    MediaElementAudioSourceNode,
-    AnalyserNode,
     js_sys::Promise,
 };
 use crate::state::{TrackUiState, TrackFileState};
 
-#[derive(Clone)]
 pub struct Player {
     audio: Arc<HtmlAudioElement>,
-    _audio_context: AudioContext,
-    _audio_source: MediaElementAudioSourceNode,
-    _audio_analyser: AnalyserNode,
-    _audio_buffer: Vec<u8>,
 }
 
 impl Player {
-    const FFT_SIZE: u32 = 256;
+    const FFT_SIZE: u32 = 512;
 
-    pub fn new(volume: u8, speed: u8, on_time_change: impl Fn(u32) + 'static) -> Self {
+    pub fn new(
+        equalizer_level_count: u8,
+        volume: u8, 
+        speed: u8, 
+        on_time_change: impl Fn(u32) + 'static,
+        on_equalizer_update: impl Fn(Vec<u8>) + 'static,
+    ) -> Self {
         let audio = Arc::new(HtmlAudioElement::new().unwrap());
         audio.set_volume(volume as f64 / 100.0);
         audio.set_playback_rate(speed as f64 / 100.0);
         audio.set_current_time(0.0);
         audio.set_preload("metadata");
         audio.set_autoplay(false);
-        
+
         let audio0 = audio.clone();
         let ontimeupdate = Closure::wrap(Box::new(move |_e: Event| {
             let time = audio0.current_time() as u32;
@@ -48,25 +47,83 @@ impl Player {
         audio.set_ontimeupdate(Some(ontimeupdate.as_ref().unchecked_ref()));
         ontimeupdate.forget();
 
-        let _audio_context = AudioContext::new().unwrap();
-        let _audio_source = _audio_context.create_media_element_source(&audio).unwrap();
-        
-        let _audio_analyser = _audio_context.create_analyser().unwrap();
-        _audio_analyser.set_fft_size(Self::FFT_SIZE);
-
-        _audio_source.connect_with_audio_node(&_audio_analyser).unwrap();
-        _audio_analyser.connect_with_audio_node(&_audio_context.destination()).unwrap();
-
-        let buffer_len = _audio_analyser.frequency_bin_count() as usize;
-        let _audio_buffer = Vec::<u8>::with_capacity(buffer_len);
+        Self::watch_equalizer_updates(
+            equalizer_level_count,
+            audio.clone(),
+            on_equalizer_update,
+        );
 
         Self {
             audio,
-            _audio_context,
-            _audio_source,
-            _audio_analyser,
-            _audio_buffer,
         }
+    }
+
+    fn watch_equalizer_updates(
+        equalizer_level_count: u8,
+        audio: Arc<HtmlAudioElement>,
+        on_equalizer_update: impl Fn(Vec<u8>) + 'static,
+    ) {
+        let audio_context = AudioContext::new().unwrap();
+        let audio_source = audio_context.create_media_element_source(&audio).unwrap();
+        
+        let audio_analyser = Arc::new(audio_context.create_analyser().unwrap());
+        audio_analyser.set_fft_size(Self::FFT_SIZE);
+        audio_analyser.set_smoothing_time_constant(0.8);
+
+        audio_source.connect_with_audio_node(&audio_analyser).unwrap();
+        audio_analyser.connect_with_audio_node(&audio_context.destination()).unwrap();
+
+        let buffer_len = audio_analyser.frequency_bin_count() as usize;
+        let mut audio_buffer = Arc::new(vec![0_u8; buffer_len]);
+
+        let onanimationframe: Arc<RefCell<Option<ScopedClosure<'_, dyn FnMut()>>>> = Arc::new(RefCell::new(None));
+        let onanimationframe_clone = onanimationframe.clone();
+
+        *onanimationframe_clone.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+            if !audio.paused() {
+                let audio_buffer = Arc::make_mut(&mut audio_buffer);
+                audio_analyser.get_byte_frequency_data(audio_buffer);
+
+                let mut euqlizer_levels = vec![0_u8; equalizer_level_count as usize];
+                let step_size = buffer_len / equalizer_level_count as usize;
+                let mut step = 0_usize;
+                
+                for i in 0..equalizer_level_count as usize {
+                    let mut sum = 0_u64;
+                    let start = step;
+                    let end = if i == equalizer_level_count as usize - 1 {
+                            audio_buffer.len() - step
+                        } else {
+                            step + step_size
+                        };
+
+                    for j in start..end {
+                        sum += audio_buffer[j] as u64;
+                    }
+
+                    let avg = sum / step_size as u64;
+
+                    euqlizer_levels[i] = avg as u8;
+                    step += step_size;
+                }
+
+                on_equalizer_update(euqlizer_levels);
+            }
+
+            web_sys::window()
+                .unwrap()
+                .request_animation_frame(
+                    onanimationframe.borrow().as_ref().unwrap().as_ref().unchecked_ref()
+                )
+                .unwrap();
+        }) as Box<dyn FnMut()>));
+
+        web_sys::window()
+            .unwrap()
+            .request_animation_frame(
+                onanimationframe_clone.borrow().as_ref().unwrap().as_ref().unchecked_ref()
+            )
+            .unwrap();
     }
 
     pub fn play(&self) {
@@ -120,12 +177,6 @@ impl Player {
         self.audio.set_loop(is_loop);
     }
 
-    pub fn _get_audio_buffer(&mut self) -> &[u8] {
-        self._audio_analyser.get_byte_frequency_data(&mut self._audio_buffer);
-
-        &self._audio_buffer
-    }
-
     pub async fn parse_files(&self, files: FileList, current_tracks: Vec<TrackUiState>) -> Vec<TrackFileState> {
         let mut futures = vec![];
         let mut file_names = vec![];
@@ -153,7 +204,7 @@ impl Player {
         current_tracks.iter().find(|track| track.name == file.name()).is_some()
     }
 
-    pub async fn get_track_duration(&self, file: File) -> (String, u32) {
+    async fn get_track_duration(&self, file: File) -> (String, u32) {
         let reader = FileReader::new().unwrap();
 
         let reader_onload_promise = Promise::new(&mut |resolve, _| {

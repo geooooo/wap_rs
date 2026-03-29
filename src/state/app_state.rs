@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use leptos::leptos_dom::logging::console_log;
 use rand::{self, Rng};
 use super::play_state::PlayState;
 use super::track_file_state::TrackFileState;
@@ -12,6 +11,7 @@ pub struct AppState {
     track_index: Option<usize>,
     ui_tracks: Vec<TrackUiState>, 
     tracks_data: Vec<Arc<String>>,
+    equalizer_levels: Vec<u8>,
     help_text: String,
     is_track_list_visible: bool,
     is_loop: bool,
@@ -29,6 +29,7 @@ impl Default for AppState {
             track_index: None,
             ui_tracks: vec![],
             tracks_data: vec![],
+            equalizer_levels: vec![0; Self::EQUALIZER_LEVEL_COUNT as usize],
             help_text: String::new(),
             is_track_list_visible: true,
             is_loop: false,
@@ -45,6 +46,7 @@ impl AppState {
     pub const MAX_SPEED: u8 = 200;
     pub const MAX_VOLUME: u8 = 100;
     pub const VOLUME_STEP: u8 = 10;
+    pub const EQUALIZER_LEVEL_COUNT: u8 = 30;
 
     pub fn format_time(time: u32) -> String {
         let hours = time / 3600;
@@ -129,6 +131,16 @@ impl AppState {
         self.time = time;
 
         self.set_help_text(HelpTarget::TimeLine);
+    }
+
+    pub fn set_equalizer_levels(&mut self, equalizer_levels: Vec<u8>) {
+        self.equalizer_levels = equalizer_levels;
+
+    }
+
+    pub fn clear_equalizer_levels(&mut self) {
+        self.equalizer_levels = vec![0_u8; Self::EQUALIZER_LEVEL_COUNT as usize];
+
     }
 
     pub fn set_speed(&mut self, speed: u8) {
@@ -269,6 +281,10 @@ impl AppState {
 
     pub fn get_speed(&self) -> u8 {
         self.speed
+    }
+
+    pub fn get_equalizer_levels(&self) -> Vec<u8> {
+        self.equalizer_levels.clone()
     }
 
     pub fn get_track_duration(&self) -> u32 {
