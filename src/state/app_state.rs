@@ -385,7 +385,9 @@ impl AppState {
 
     fn select_or_deselect_all_tracks(&mut self, is_select: bool) {
         self.ui_tracks.iter_mut().for_each(|track| {
-            track.is_selected = is_select;
+            if !track.is_played {
+                track.is_selected = is_select;
+            }
         });
     }
 

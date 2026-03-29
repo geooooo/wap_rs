@@ -126,6 +126,21 @@ impl Player {
             .unwrap();
     }
 
+    pub fn set_on_play_end(
+        &self, 
+        on_play_end: impl Fn() + 'static,
+        next_track_getter: impl Fn() -> Arc<String> + 'static,
+    ) {
+        let onended = Closure::wrap(Box::new(move |_e: Event| {
+            on_play_end();
+            let data = next_track_getter();
+            self.play_track(data);
+        }) as Box<dyn FnMut(Event)>);
+    
+        self.audio.set_onended(Some(onended.as_ref().unchecked_ref()));
+        onended.forget();
+    }
+
     pub fn play(&self) {
         let _ = self.audio.play();
     }

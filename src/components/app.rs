@@ -26,6 +26,14 @@ pub fn App() -> impl IntoView {
         move |time| state.update(|state| state.set_time(time)),
         move |equalizer_levels| state.update(|state| state.set_equalizer_levels(equalizer_levels)),
     ));
+    player.set_on_play_end(
+        move || state.update(|state| {
+            state.set_next_track();
+            state.set_play_state();
+            state.set_time(0);
+        }),
+        move || state.with_untracked(|state| state.get_track().unwrap()),
+    );
 
     let help_text = create_read_slice(
         state,
